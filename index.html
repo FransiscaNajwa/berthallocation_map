@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berth Allocation - Laporan Mingguan</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/png" href="./Logo Website.png">
+</head>
+<body>
+
+    <div id="pdf-header" class="pdf-header"
+         style="display: none; /* Akan diubah jadi flex oleh JS */
+                /* Aktifkan Flexbox */
+                display: flex;
+                justify-content: space-between; /* Penting: Dorong item ke ujung */
+                align-items: center; /* Sejajarkan vertikal */
+                /* Styling umum */
+                padding: 15px 25px;
+                border-bottom: 2px solid #ccc;
+                background-color: white;
+                width: 100%;
+                box-sizing: border-box;">
+
+        <div style="width: 150px; /* Sesuaikan lebar ini agar = lebar logo */ flex-shrink: 0; visibility: hidden;"></div>
+
+        <div class="pdf-title-container" style="text-align: center; /* Rata tengah teks */ margin: 0 auto; /* Otomatis tengahkan blok ini */">
+            <h1 class="pdf-main-title" style="font-size: 1.8em; font-weight: bold; margin: 0 0 5px 0; color: #333; letter-spacing: 2px;">BERTH ALLOCATION MAP</h1>
+            <h2 class="pdf-subtitle" style="font-size: 1.1em; font-weight: bold; margin: 0 0 8px 0; color: #555; letter-spacing: 1px;">TPK NILAM</h2>
+            <p class="pdf-date-range" style="font-size: 0.9em; margin: 0; color: #666;"></p>
+        </div>
+
+        <img src="./pelindo-logo.png" alt="Pelindo Logo" class="pdf-logo"
+             style="height: 50px; width: auto; display: block; flex-shrink: 0;" 
+             onerror="this.style.display='none'; console.error('Gagal memuat logo PDF:', this.src);">
+
+    </div>
+
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-title-container">
+                <h1 id="report-title">Berth Allocation Map</h1>
+                <h2 id="report-subtitle">TPK Nilam</h2>
+            </div>
+
+            <div class="controls">
+                <button id="prev-week-btn" class="btn" title="Minggu Sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                <input type="date" id="week-date-picker" class="btn">
+                <button id="next-week-btn" class="btn" title="Minggu Berikutnya"><i class="fas fa-chevron-right"></i></button>
+                <button id="add-ship-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Kapal</button>
+                <button id="add-maintenance-btn" class="btn btn-info"><i class="fas fa-wrench"></i> Maintenance</button>
+                <button id="add-rest-btn" class="btn btn-dark"><i class="fas fa-coffee"></i> Break</button>
+
+                <div class="pdf-dropdown-container">
+                    <button id="export-pdf-btn" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <div id="pdf-options" class="pdf-options" style="display: none;">
+                        <button class="pdf-option-btn" data-type="weekly">Mingguan</button>
+                        <button class="pdf-option-btn" data-type="daily">Harian (Hari Ini & Besok)</button>
+                    </div>
+                </div>
+
+                <button id="clear-data-btn" class="btn btn-warning" title="Hapus Semua Data"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        </header>
+
+        <div id="berth-map-container" class="berth-map-container">
+            <div class="y-axis-column">
+                <div class="y-axis-header">
+                    <div class="y-axis-header-cell" id="date-day-label-header">DATE / DAY</div>
+                    <div class="y-axis-header-cell" id="hour-label-header">HOUR</div>
+                </div>
+                <div class="y-axis-content">
+                    <div class="berth-labels-container"></div>
+                    <div class="y-axis"></div>
+                </div>
+            </div>
+            <div class="grid-scroll-container">
+                <div class="grid-container">
+                    <div class="x-axis"></div>
+                    <div id="hour-axis" class="hour-axis"></div>
+                    <div id="grid" class="grid">
+                        <div id="berth-divider-line"></div>
+                        <div id="current-time-indicator"></div>
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legends-scroll-container">
+             <div class="bottom-legends-wrapper">
+                 <div class="description-remark-legend">
+                     <div class="legend-column">
+                         <h3>DESCRIPTION</h3>
+                         <ul>
+                             <li><span class="color-box color-vessel-alongside"></span> VESSEL ALONGSIDE</li>
+                             <li><span class="color-box color-on-plotting"></span> VESSEL ON PLOTTING</li>
+                             <li><span class="color-box color-on-planning"></span> VESSEL ON PLANNING</li>
+                             <li><span class="color-box color-vessel-depart"></span> VESSEL DEPART</li>
+                             <li><span class="color-box color-crane-maintenance"></span> CRANE/BERTH MAINTENANCE</li>
+                         </ul>
+                     </div>
+                     <div class="legend-column">
+                         <h3>REMARK</h3>
+                         <ul>
+                             <li><strong class="remark-abbr">OS</strong> OPEN STACK</li>
+                             <li><strong class="remark-abbr">CT</strong> CLOSING TIME</li>
+                             <li><strong class="remark-abbr">EC</strong> EXTRA CALL</li>
+                             <li><strong class="remark-abbr">AD</strong> AGEN DELAYED</li>
+                             <li><strong class="remark-abbr">VT</strong> VESSEL TARGET</li>
+                             <li><strong class="remark-abbr">P</strong> PORT SIDE</li>
+                             <li><strong class="remark-abbr">S</strong> STARBOARD SIDE</li>
+                         </ul>
+                     </div>
+                 </div>
+                 <div class="panel-style-legend">
+                     <div class="legend-item">
+                         <div class="legend-title">NAMA KAPAL</div>
+                         <div class="legend-subtitle">KODE KAPAL / VOYAGE / TAHUN / WINDOW</div>
+                     </div>
+                     <div class="legend-item legend-logo-container">
+                         <div class="legend-title">LOGO</div>
+                         <div class="legend-subtitle">SHIPPING</div>
+                     </div>
+                     <div class="legend-item legend-full-width">INFORMASI KAPAL : LOA / DRAFT / DESTINATION PORT / NEXT PORT</div>
+                     <div class="legend-item legend-full-width">INFORMASI TAMBATAN : PORT/STARBORD / START KD / END KD / MEAN</div>
+                     <div class="legend-item legend-full-width">INFORMASI JADWAL : ETA ETB ETC ETD</div>
+                     <div class="legend-item legend-full-width">INFORMASI MUATAN : DISCHARGE / LOADING</div>
+                     <div class="legend-item legend-full-width">INFORMASI QCC : QCC</div>
+                     <div class="legend-item legend-full-width eta-status-bar">
+                         <span>ETA Warna status perencanaan kapal</span>
+                         <span class="bsh-ps-legend">BSH | P/S</span>
+                     </div>
+                 </div>
+                 <div class="communication-log-container">
+                     <h2>Communication Log</h2>
+                     <table id="comm-log-table">
+                         <thead>
+                             <tr>
+                                 <th>No.</th>
+                                 <th>Date - Time</th>
+                                 <th>Petugas</th>
+                                 <th>Stakeholder</th>
+                                 <th>PIC</th>
+                                 <th>Remark</th>
+                                 <th>Comm Channel</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             <tr>
+                                 <td>1</td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true">WAG</td>
+                             </tr>
+                              <tr>
+                                 <td>2</td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true">WAG</td>
+                             </tr>
+                             <tr>
+                                 <td>3</td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true">WAG</td>
+                             </tr>
+                             <tr>
+                                 <td>4</td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true">WAG</td>
+                             </tr>
+                             <tr>
+                                 <td>5</td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true"></td>
+                                 <td contenteditable="true">WAG</td>
+                             </tr>
+                         </tbody>
+                     </table>
+                 </div>
+             </div>
+        </div>
+
+        <div id="ship-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2 id="modal-title">Tambah Jadwal Kapal</h2>
+                <form id="ship-form">
+                    <div class="form-group">
+                        <label for="ship-company">Pelayaran:</label>
+                        <select id="ship-company" name="company" required>
+                            <option value="" disabled selected>-- Pilih Pelayaran --</option>
+                            <option value="SPIL">SPIL</option>
+                            <option value="CTP">CTP</option>
+                            <option value="MERATUS">MERATUS</option>
+                            <option value="TANTO">TANTO</option>
+                            <option value="PPNP">PPNP</option>
+                            <option value="ICON">ICON</option>
+                            <option value="LINE">TEMAS LINE</option>
+                            <option value="LAIN - LAIN">LAIN - LAIN</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-name">Nama Kapal:</label>
+                        <input type="text" id="ship-name" name="shipName" placeholder="Contoh: KATINGAN" required>
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label for="ship-code">Kode Kapal/Voyage/Tahun/Window:</label>
+                        <input type="text" id="ship-code" name="code" placeholder="Contoh: MKT / 221 / 25 / ON" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-length">Panjang Kapal (LOA):</label>
+                        <input type="number" id="ship-length" step="0.1" name="length" placeholder="Contoh: 100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-draft">Draft Kapal (meter):</label>
+                        <input type="number" step="0.1" id="ship-draft" name="draft" placeholder="Contoh: 8.5" required>
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label for="dest-port">Destination Port / Next Port:</label>
+                        <input type="text" id="dest-port" name="destPort" placeholder="Contoh: IDSUB / " required>
+                    </div>
+                    <div class="form-group">
+                        <label for="start-kd">Start KD:</label>
+                        <input type="number" id="start-kd" name="startKd" placeholder="Contoh: 330" min="330" max="650" step="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="n-kd">End KD:</label> <input type="number" id="n-kd" name="nKd" placeholder="Ex: 500" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="min-kd">Mean:</label> <input type="number" id="min-kd" name="minKd" placeholder="Ex: 650" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-bsh">BSH:</label>
+                        <input type="number" id="ship-bsh" name="bsh" placeholder="Ex: 38">
+                    </div>
+                    <div class="form-group">
+                        <label for="eta-time">Waktu Tiba (ETA):</label>
+                        <input type="datetime-local" id="eta-time" name="etaTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="start-time">Waktu Sandar (ETB):</label>
+                        <input type="datetime-local" id="start-time" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="etc-time">Waktu Selesai (ETC):</label>
+                        <input type="datetime-local" id="etc-time" name="etcTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="end-time">Waktu Berangkat (ETD):</label>
+                        <input type="datetime-local" id="end-time" name="endTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="discharge-value">Discharge:</label>
+                        <input type="number" id="discharge-value" name="dischargeValue" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="load-value">Loading:</label>
+                        <input type="number" id="load-value" name="loadValue" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-status">Status Kapal:</label>
+                        <select id="ship-status" name="status" required>
+                            <option value="VESSEL ALONGSIDE">VESSEL ALONGSIDE</option>
+                            <option value="VESSEL ON PLOTTING">VESSEL ON PLOTTING</option>
+                            <option value="VESSEL ON PLANNING">VESSEL ON PLANNING</option>
+                            <option value="VESSEL DEPART">VESSEL DEPART</option>
+                            <option value="CRANE/BERTH MAINTENANCE">CRANE/BERTH MAINTENANCE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-berth-side">Berth Side:</label>
+                        <select id="ship-berth-side" name="berthSide">
+                            <option value="P">P (Port)</option>
+                            <option value="S">S (Starboard)</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label>QCC:</label> <div class="qcc-checkbox-group" id="qcc-checkbox-group">
+                            <div class="qcc-option">
+                                <input type="checkbox" id="qcc-01" name="qcc-options" value="QCC01">
+                                <label for="qcc-01">QCC01</label>
+                            </div>
+                            <div class="qcc-option">
+                                <input type="checkbox" id="qcc-02" name="qcc-options" value="QCC02">
+                                <label for="qcc-02">QCC02</label>
+                            </div>
+                            <div class="qcc-option">
+                                <input type="checkbox" id="qcc-03" name="qcc-options" value="QCC03">
+                                <label for="qcc-03">QCC03</label>
+                            </div>
+                            <div class="qcc-option">
+                                <input type="checkbox" id="qcc-04" name="qcc-options" value="QCC04">
+                                <label for="qcc-04">QCC04</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-group-full form-button-group">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" id="delete-ship-btn" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="maintenance-modal" class="modal">
+             <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2 id="maintenance-modal-title">Tambah Maintenance</h2>
+                <form id="maintenance-form">
+
+                    <div class="form-group form-group-full">
+                        <label for="maintenance-type">Tipe Blok</label>
+                        <select id="maintenance-type" name="type">
+                            <option value="maintenance">Maintenance (Blok Oranye)</option>
+                            <option value="no-vessel">Area Kosong (Teks Diagonal)</option>
+                        </select>
+                        <small>Pilih jenis blok yang ingin ditambahkan ke grid.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maintenance-start-kd">Start KD:</label>
+                        <input type="number" id="maintenance-start-kd" name="startKd" placeholder="Contoh: 350" min="330" max="650" step="5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maintenance-end-kd">End KD:</label>
+                        <input type="number" id="maintenance-end-kd" name="endKd" placeholder="Contoh: 400" min="330" max="650" step="5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maintenance-start-time">Waktu Mulai:</label>
+                        <input type="datetime-local" id="maintenance-start-time" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance-end-time">Waktu Selesai:</label>
+                        <input type="datetime-local" id="maintenance-end-time" name="endTime" required>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="maintenance-keterangan">Keterangan:</label>
+                        <textarea id="maintenance-keterangan" name="keterangan" rows="3" placeholder="Contoh: Perbaikan Fender"></textarea>
+                    </div>
+
+                    <div class="form-group form-group-full form-button-group">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" id="delete-maintenance-btn" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="rest-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2 id="rest-modal-title">Tambah Waktu Istirahat</h2>
+                <form id="rest-form">
+                    <div class="form-group">
+                        <label for="rest-start-time">Waktu Mulai:</label>
+                        <input type="datetime-local" id="rest-start-time" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest-end-time">Waktu Selesai:</label>
+                        <input type="datetime-local" id="rest-end-time" name="endTime" required>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="rest-keterangan">Keterangan:</label>
+                        <textarea id="rest-keterangan" name="keterangan" rows="3" placeholder="Contoh: Istirahat Shift 1"></textarea>
+                    </div>
+
+                    <div class="form-group form-group-full form-button-group">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" id="delete-rest-btn" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
