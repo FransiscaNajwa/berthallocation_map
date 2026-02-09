@@ -149,7 +149,7 @@
                          <tbody>
                              <tr>
                                  <td>1</td>
-                                 <td contenteditable="true"></td>
+                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
@@ -158,7 +158,7 @@
                              </tr>
                               <tr>
                                  <td>2</td>
-                                 <td contenteditable="true"></td>
+                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
@@ -167,7 +167,7 @@
                              </tr>
                              <tr>
                                  <td>3</td>
-                                 <td contenteditable="true"></td>
+                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
@@ -176,7 +176,7 @@
                              </tr>
                              <tr>
                                  <td>4</td>
-                                 <td contenteditable="true"></td>
+                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
@@ -185,7 +185,7 @@
                              </tr>
                              <tr>
                                  <td>5</td>
-                                 <td contenteditable="true"></td>
+                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
                                  <td contenteditable="true"></td>
@@ -194,6 +194,14 @@
                              </tr>
                          </tbody>
                      </table>
+                     <div style="margin-top: 15px; display: flex; gap: 10px;">
+                         <button id="save-comm-log-btn" class="btn btn-primary" style="padding: 10px 20px;">
+                             <i class="fas fa-save"></i> Simpan Communication Log
+                         </button>
+                         <button id="clear-comm-log-btn" class="btn btn-warning" style="padding: 10px 20px;">
+                             <i class="fas fa-trash-alt"></i> Hapus Semua
+                         </button>
+                     </div>
                  </div>
              </div>
         </div>
@@ -242,10 +250,10 @@
                         <input type="number" id="start-kd" name="startKd" placeholder="Contoh: 330" min="330" max="650" step="5" required>
                     </div>
                     <div class="form-group">
-                        <label for="n-kd">End KD:</label> <input type="number" id="n-kd" name="nKd" placeholder="Ex: 500" required>
+                        <label for="n-kd">End KD:</label> <input type="number" id="n-kd" name="nKd" placeholder="Ex: 500" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="min-kd">Mean:</label> <input type="number" id="min-kd" name="minKd" placeholder="Ex: 650" required>
+                        <label for="min-kd">Mean:</label> <input type="number" id="min-kd" name="minKd" placeholder="Ex: 650" readonly>
                     </div>
                     <div class="form-group">
                         <label for="ship-bsh">BSH:</label>
@@ -261,11 +269,11 @@
                     </div>
                     <div class="form-group">
                         <label for="etc-time">Waktu Selesai (ETC):</label>
-                        <input type="datetime-local" id="etc-time" name="etcTime" required>
+                        <input type="datetime-local" id="etc-time" name="etcTime" readonly>
                     </div>
                     <div class="form-group">
                         <label for="end-time">Waktu Berangkat (ETD):</label>
-                        <input type="datetime-local" id="end-time" name="endTime" required>
+                        <input type="datetime-local" id="end-time" name="endTime" readonly>
                     </div>
                     <div class="form-group">
                         <label for="discharge-value">Discharge:</label>

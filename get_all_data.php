@@ -25,9 +25,20 @@ try {
 
     error_log("Rest schedules fetched: " . json_encode($response['restSchedules']));
 
+    // Ambil semua data dari tabel communication_logs
+    $commLogs = $conn->query("SELECT * FROM communication_logs ORDER BY id ASC");
+    if ($commLogs) {
+        $response['communicationLogs'] = $commLogs->fetch_all(MYSQLI_ASSOC);
+        error_log("Communication logs fetched: " . json_encode($response['communicationLogs']));
+    } else {
+        error_log("Communication logs query failed: " . $conn->error);
+        $response['communicationLogs'] = [];
+    }
+
     echo json_encode($response);
 } catch (Exception $e) {
     error_log("Error fetching data: " . $e->getMessage());
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
 ?>
+

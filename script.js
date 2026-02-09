@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Global error handler untuk catch semua JavaScript errors
+    window.addEventListener('error', (event) => {
+        console.error('🔴 GLOBAL ERROR:', event.error);
+        console.error('Message:', event.message);
+        console.error('Stack:', event.error?.stack);
+    });
+    
     const KD_MARKERS = Array.from({ length: (650 - 330) / 10 + 1 }, (_, i) => 330 + i * 10);
     const HOUR_WIDTH = 25;
     const KD_HEIGHT_UNIT = 40;
@@ -401,48 +408,132 @@ document.addEventListener('DOMContentLoaded', () => {
     }
  
 
-    function saveCommLog() {
+    async function saveCommLog() {
         const table = document.getElementById('comm-log-table');
         const rows = table.querySelectorAll('tbody tr');
         const data = [];
 
         rows.forEach(row => {
-            const cells = row.querySelectorAll('td[contenteditable="true"]');
-            if (cells.length === 6) {
+            // Ambil datetime input
+            const datetimeInput = row.querySelector('input[type="datetime-local"]');
+            
+            // Ambil contenteditable cells (skip yang pertama karena itu No.)
+            const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
+            
+            if (datetimeInput && contentEditableCells.length >= 5) {
+                // Convert datetime-local (2026-02-09T15:30) ke MySQL format (2026-02-09 15:30:00)
+                let dateTimeValue = datetimeInput.value;
+                if (dateTimeValue) {
+                    dateTimeValue = dateTimeValue.replace('T', ' ') + ':00';
+                }
+
                 const rowData = {
-                    dateTime: cells[0].textContent,
-                    petugas: cells[1].textContent,
-                    stakeholder: cells[2].textContent,
-                    pic: cells[3].textContent,
-                    remark: cells[4].textContent,
-                    commChannel: cells[5].textContent,
+                    dateTime: dateTimeValue,
+                    petugas: contentEditableCells[0].textContent,
+                    stakeholder: contentEditableCells[1].textContent,
+                    pic: contentEditableCells[2].textContent,
+                    remark: contentEditableCells[3].textContent,
+                    commChannel: contentEditableCells[4].textContent,
                 };
                 data.push(rowData);
             }
         });
 
-        localStorage.setItem('communicationLogData', JSON.stringify(data));
-    }
-    function loadCommLog() {
-        const data = JSON.parse(localStorage.getItem('communicationLogData'));
-        if (!data) return;
+        console.log('📤 Sending data to API:', data);
 
-        const table = document.getElementById('comm-log-table');
-        const rows = table.querySelectorAll('tbody tr');
+        try {
+            const response = await fetch('save_comm_log.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
 
-        rows.forEach((row, index) => {
-            if (!data[index]) return;
+            const responseText = await response.text();
+            console.log('📥 Raw response:', responseText);
 
-            const cells = row.querySelectorAll('td[contenteditable="true"]');
-            if (cells.length === 6) {
-                cells[0].textContent = data[index].dateTime;
-                cells[1].textContent = data[index].petugas;
-                cells[2].textContent = data[index].stakeholder;
-                cells[3].textContent = data[index].pic;
-                cells[4].textContent = data[index].remark;
-                cells[5].textContent = data[index].commChannel;
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('❌ Failed to parse JSON:', e);
+                alert('❌ Error: Response tidak valid dari server');
+                return false;
             }
-        });
+
+            if (result.status === 'success') {
+                console.log('✅ Communication log saved successfully:', result.message);
+                return true;
+            } else {
+                console.error('❌ API Error:', result.message);
+                alert('❌ Gagal menyimpan: ' + result.message);
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Network/API Error:', error);
+            alert('❌ Error API: ' + error.message);
+            return false;
+        }
+    }
+
+    async function loadCommLog() {
+        console.log('📥 Loading Communication Log from database...');
+        
+        try {
+            const response = await fetch('get_comm_log.php');
+            const responseText = await response.text();
+            console.log('📥 Raw response:', responseText);
+
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('❌ Failed to parse JSON:', e);
+                return;
+            }
+
+            if (result.status !== 'success' || !result.data) {
+                console.log('📭 No communication log data found or error:', result.message);
+                return;
+            }
+
+            const data = result.data;
+            console.log('✅ Loaded', data.length, 'communication log entries');
+
+            const table = document.getElementById('comm-log-table');
+            const rows = table.querySelectorAll('tbody tr');
+
+            rows.forEach((row, index) => {
+                if (!data[index]) return;
+
+                // Set datetime input
+                const datetimeInput = row.querySelector('input[type="datetime-local"]');
+                if (datetimeInput && data[index].dateTime) {
+                    // Convert MySQL format (2026-02-09 15:30:00) ke datetime-local (2026-02-09T15:30)
+                    const dateTimePart = data[index].dateTime.split(' ');
+                    if (dateTimePart.length >= 2) {
+                        const datePart = dateTimePart[0]; // 2026-02-09
+                        const timePart = dateTimePart[1].substring(0, 5); // 15:30 (exclude seconds)
+                        datetimeInput.value = datePart + 'T' + timePart;
+                    }
+                }
+
+                // Set contenteditable cells
+                const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
+                if (contentEditableCells.length >= 5) {
+                    contentEditableCells[0].textContent = data[index].petugas || '';
+                    contentEditableCells[1].textContent = data[index].stakeholder || '';
+                    contentEditableCells[2].textContent = data[index].pic || '';
+                    contentEditableCells[3].textContent = data[index].remark || '';
+                    contentEditableCells[4].textContent = data[index].commChannel || 'WAG';
+                }
+            });
+
+            console.log('✅ Communication log loaded from database');
+        } catch (error) {
+            console.error('❌ Error loading communication log:', error);
+        }
     }
 
      function savePendingForm() {
@@ -509,13 +600,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function initialize() {
+    async function initialize() {
         // Load data from database first, then update UI
-        loadDataFromDatabase().then(() => {
-            updateDisplay(); 
-            setupEventListeners();
-            loadCommLog();
-        });
+        await loadDataFromDatabase();
+        updateDisplay(); 
+        setupEventListeners();
+        await loadCommLog();
     }
 
     function drawGrid() {
@@ -735,39 +825,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fillFormForEdit(ship) {
-        document.getElementById('ship-company').value = ship.company;
-        document.getElementById('ship-name').value = ship.shipName;
-        document.getElementById('ship-code').value = ship.code;
-        document.getElementById('ship-length').value = ship.length;
-        document.getElementById('ship-draft').value = ship.draft;
-        document.getElementById('dest-port').value = ship.destPort || '';
-        document.getElementById('start-kd').value = ship.startKd;
-        document.getElementById('n-kd').value = ship.nKd || '';
-        document.getElementById('min-kd').value = ship.minKd || '';
-        document.getElementById('load-value').value = ship.loadValue || 0;
-        document.getElementById('discharge-value').value = ship.dischargeValue || 0;
-        document.getElementById('eta-time').value = formatForInput(ship.etaTime);
-        document.getElementById('start-time').value = formatForInput(ship.startTime);
-        document.getElementById('etc-time').value = formatForInput(ship.etcTime);
-        document.getElementById('end-time').value = formatForInput(ship.endTime);
-        document.getElementById('ship-status').value = ship.status;
-        document.getElementById('ship-berth-side').value = ship.berthSide;
-        document.getElementById('ship-bsh').value = ship.bsh || '';
-        document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]').forEach(cb => {
-    cb.checked = false;
-});
+        try {
+            document.getElementById('ship-company').value = ship.company || '';
+            document.getElementById('ship-name').value = ship.shipName || '';
+            document.getElementById('ship-code').value = ship.code || '';
+            document.getElementById('ship-length').value = ship.length || '';
+            document.getElementById('ship-draft').value = ship.draft || '';
+            document.getElementById('dest-port').value = ship.destPort || '';
+            
+            // PENTING: Validate dan set startKd dengan benar
+            const startKdValue = parseInt(ship.startKd, 10);
+            if (isNaN(startKdValue) || startKdValue === 0) {
+                console.error('Invalid startKd from database:', ship.startKd);
+                alert('Error: Start KD data tidak valid (' + ship.startKd + ')');
+                return;
+            }
+            document.getElementById('start-kd').value = startKdValue;
+            const nKdValue = parseInt(ship.nKd, 10);
+            document.getElementById('n-kd').value = isNaN(nKdValue) ? '' : nKdValue;
+            document.getElementById('min-kd').value = ship.minKd || '';
+            
+            document.getElementById('load-value').value = ship.loadValue || 0;
+            document.getElementById('discharge-value').value = ship.dischargeValue || 0;
+            document.getElementById('eta-time').value = formatForInput(ship.etaTime);
+            document.getElementById('start-time').value = formatForInput(ship.startTime);
+            document.getElementById('etc-time').value = formatForInput(ship.etcTime);
+            document.getElementById('end-time').value = formatForInput(ship.endTime);
+            document.getElementById('ship-status').value = ship.status || '';
+            document.getElementById('ship-berth-side').value = ship.berthSide || '';
+            document.getElementById('ship-bsh').value = ship.bsh || '';
+            
+            document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
 
-const savedQCCs = ship.qccName || ''; 
-if (savedQCCs) {
-    const qccArray = savedQCCs.split(' & ');
-    qccArray.forEach(qccValue => {
-        const checkbox = document.querySelector(`#qcc-checkbox-group input[value="${qccValue}"]`);
-        if (checkbox) {
-            checkbox.checked = true;
+            const savedQCCs = ship.qccName || ''; 
+            if (savedQCCs) {
+                const qccArray = savedQCCs.split(' & ');
+                qccArray.forEach(qccValue => {
+                    const checkbox = document.querySelector(`#qcc-checkbox-group input[value="${qccValue}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+            // Trigger calculations after form is populated
+            setTimeout(() => {
+                calculateEndKdAndMean();
+                calculateEtcAndEtd();
+            }, 100);
+        } catch (error) {
+            console.error('Error filling form for edit:', error, ship);
+            alert('Error saat load data kapal: ' + error.message);
         }
-    });
-}
-}
+    }
     function editShip(index) {
         editingShipIndex = index;
         fillFormForEdit(shipSchedules[index]);
@@ -1088,6 +1199,54 @@ if (savedQCCs) {
     }
 
     function setupEventListeners() {
+        console.log('🟢 setupEventListeners() STARTED');
+        console.log('📋 shipForm element:', shipForm);
+        console.log('📋 shipForm.elements:', shipForm?.elements?.length, 'elements found');
+        
+        // Communication Log buttons
+        const saveCommLogBtn = document.getElementById('save-comm-log-btn');
+        const clearCommLogBtn = document.getElementById('clear-comm-log-btn');
+        
+        if (saveCommLogBtn) {
+            saveCommLogBtn.addEventListener('click', async () => {
+                const success = await saveCommLog();
+                if (success) {
+                    alert('✅ Communication Log berhasil disimpan ke database!');
+                }
+            });
+        }
+        
+        if (clearCommLogBtn) {
+            clearCommLogBtn.addEventListener('click', async () => {
+                if (confirm('Anda yakin ingin menghapus semua isi Communication Log?')) {
+                    const table = document.getElementById('comm-log-table');
+                    const rows = table.querySelectorAll('tbody tr');
+                    
+                    rows.forEach(row => {
+                        // Clear datetime input
+                        const datetimeInput = row.querySelector('input[type="datetime-local"]');
+                        if (datetimeInput) {
+                            datetimeInput.value = '';
+                        }
+
+                        // Clear contenteditable cells (except Comm Channel)
+                        const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
+                        contentEditableCells.forEach((cell, idx) => {
+                            if (idx < contentEditableCells.length - 1) {
+                                cell.textContent = '';
+                            } else {
+                                cell.textContent = 'WAG';
+                            }
+                        });
+                    });
+                    
+                    // Save to database (empty data)
+                    await saveCommLog();
+                    alert('✅ Communication Log berhasil dihapus!');
+                }
+            });
+        }
+        
         prevWeekBtn.addEventListener('click', () => { currentStartDate.setDate(currentStartDate.getDate() - 7); updateDisplay(); });
         nextWeekBtn.addEventListener('click', () => { currentStartDate.setDate(currentStartDate.getDate() + 7); updateDisplay(); });
 
@@ -1111,6 +1270,11 @@ if (savedQCCs) {
             formSubmitBtn.textContent = 'Submit';
             shipForm.classList.remove('edit-mode');
             deleteShipBtn.onclick = null;
+            // Trigger calculations terutama untuk readonly fields yang kosong
+            setTimeout(() => {
+                calculateEndKdAndMean();
+                calculateEtcAndEtd();
+            }, 100);
             modal.style.display = 'block';
         });
         closeModalBtn.addEventListener('click', () => {
@@ -1145,52 +1309,93 @@ if (savedQCCs) {
         
         // Function untuk auto-calculate End KD dan Mean berdasarkan Start KD dan Length
         function calculateEndKdAndMean() {
-            const startKdInput = document.getElementById('start-kd');
-            const lengthInput = document.getElementById('ship-length');
-            const endKdInput = document.getElementById('n-kd');
-            const meanInput = document.getElementById('min-kd');
-            
-            const startKd = parseFloat(startKdInput.value) || 0;
-            const length = parseFloat(lengthInput.value) || 0;
-            
-            if (startKd > 0 && length > 0) {
-                const endKd = startKd + length;
-                const mean = (startKd + endKd) / 2;
+            try {
+                const startKdInput = document.getElementById('start-kd');
+                const lengthInput = document.getElementById('ship-length');
+                const endKdInput = document.getElementById('n-kd');
+                const meanInput = document.getElementById('min-kd');
                 
-                endKdInput.value = endKd.toFixed(1);
-                meanInput.value = mean.toFixed(1);
+                const startKd = parseFloat(startKdInput.value) || 0;
+                const length = parseFloat(lengthInput.value) || 0;
+                
+                console.log('calculateEndKdAndMean: startKd=', startKd, 'length=', length);
+                
+                if (startKd > 0 && length > 0) {
+                    const endKd = startKd + length;
+                    const mean = (startKd + endKd) / 2;
+                    
+                    endKdInput.value = endKd.toFixed(1);
+                    meanInput.value = mean.toFixed(1);
+                } else {
+                    // Kosongkan jika input tidak valid
+                    if (!endKdInput.value) endKdInput.value = '';
+                    if (!meanInput.value) meanInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error in calculateEndKdAndMean:', error);
             }
         }
         
         // Function untuk auto-calculate ETC dan ETD berdasarkan ETB, Discharge, Loading, dan BSH
         function calculateEtcAndEtd() {
-            const startTimeInput = document.getElementById('start-time');
-            const dischargeInput = document.getElementById('discharge-value');
-            const loadingInput = document.getElementById('load-value');
-            const bshInput = document.getElementById('ship-bsh');
-            const etcInput = document.getElementById('etc-time');
-            const etdInput = document.getElementById('end-time');
-            
-            const startTime = startTimeInput.value;
-            const discharge = parseFloat(dischargeInput.value) || 0;
-            const loading = parseFloat(loadingInput.value) || 0;
-            const bsh = parseFloat(bshInput.value) || 0;
-            
-            if (startTime && bsh > 0) {
-                // ETC = ETB + ((Discharge + Loading) / BSH) hours
+            try {
+                const startTimeInput = document.getElementById('start-time');
+                const dischargeInput = document.getElementById('discharge-value');
+                const loadingInput = document.getElementById('load-value');
+                const bshInput = document.getElementById('ship-bsh');
+                const etcInput = document.getElementById('etc-time');
+                const etdInput = document.getElementById('end-time');
+                
+                const startTime = startTimeInput.value; // Format: "YYYY-MM-DDTHH:mm"
+                const discharge = parseFloat(dischargeInput.value) || 0;
+                const loading = parseFloat(loadingInput.value) || 0;
+                const bsh = parseFloat(bshInput.value) || 0;
+                
+                if (!startTime || bsh <= 0) {
+                    return; // Jangan hitung jika data belum lengkap
+                }
+                
+                // Parse datetime-local string sebagai waktu lokal
+                const [datePart, timePart] = startTime.split('T');
+                if (!datePart || !timePart) return;
+                
+                const [year, month, day] = datePart.split('-').map(Number);
+                const [hours, minutes] = timePart.split(':').map(Number);
+                
+                // Validasi parsing
+                if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+                    return;
+                }
+                
+                // Buat date object dengan waktu lokal
+                const etbDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+                
+                // Hitung ETD = ETB + ((Discharge + Loading) / BSH) jam
                 const workingHours = (discharge + loading) / bsh;
-                const etcDate = new Date(startTime);
-                etcDate.setHours(etcDate.getHours() + workingHours);
+                const etdDate = new Date(etbDate.getTime()); // Clone date
+                const etdTotalMinutes = etdDate.getHours() * 60 + etdDate.getMinutes() + (workingHours * 60);
+                etdDate.setHours(0, 0, 0, 0); // Reset ke 00:00
+                etdDate.setMinutes(etdDate.getMinutes() + etdTotalMinutes);
                 
-                // Format untuk datetime-local: YYYY-MM-DDTHH:mm
-                const etcFormatted = etcDate.toISOString().slice(0, 16);
-                etcInput.value = etcFormatted;
+                // Format ETD ke datetime-local format
+                const formatDateTime = (date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    const h = String(date.getHours()).padStart(2, '0');
+                    const min = String(date.getMinutes()).padStart(2, '0');
+                    return `${y}-${m}-${d}T${h}:${min}`;
+                };
                 
-                // ETD = ETC + 1 jam
-                const etdDate = new Date(etcDate);
-                etdDate.setHours(etdDate.getHours() + 1);
-                const etdFormatted = etdDate.toISOString().slice(0, 16);
-                etdInput.value = etdFormatted;
+                etdInput.value = formatDateTime(etdDate);
+                
+                // Hitung ETC = ETD - 1 jam
+                const etcDate = new Date(etdDate.getTime()); // Clone ETD date
+                etcDate.setHours(etcDate.getHours() - 1);
+                
+                etcInput.value = formatDateTime(etcDate);
+            } catch (error) {
+                console.error('Error calculating ETC/ETD:', error);
             }
         }
         
@@ -1206,57 +1411,127 @@ if (savedQCCs) {
 
         shipForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const etaTime = shipForm.elements['etaTime'].value;
-            const startTime = shipForm.elements['startTime'].value;
-            const etcTime = shipForm.elements['etcTime'].value;
-            const endTime = shipForm.elements['endTime'].value;
-            if (!etaTime || !startTime || !etcTime || !endTime) {
-                alert("Harap isi semua field waktu (ETA, ETB, ETC, ETD).");
-                return;
-            }
-            if (new Date(startTime) < new Date(etaTime)) {
-                alert("Waktu Sandar (ETB) tidak boleh sebelum Waktu Tiba (ETA).");
-                return;
-            }
-            if (new Date(endTime) <= new Date(startTime)) {
-                alert("Waktu Berangkat (ETD) harus setelah Waktu Sandar (ETB).");
-                return;
-            }
-            const formData = new FormData(shipForm);
-            const shipData = Object.fromEntries(formData.entries());
-            shipData.length = parseInt(shipData.length, 10);
-            shipData.draft = parseFloat(shipData.draft);
-            shipData.startKd = parseInt(shipData.startKd, 10);
-            shipData.nKd = parseInt(shipData.nKd, 10);
-            shipData.minKd = parseInt(shipData.minKd, 10);
-            shipData.bsh = parseInt(shipData.bsh, 10) || null;
-            shipData.loadValue = parseInt(shipData.loadValue, 10) || 0;
-            shipData.dischargeValue = parseInt(shipData.dischargeValue, 10) || 0;
-        
-            const qccCheckboxes = document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]:checked');
-            const checkedQCCs = Array.from(qccCheckboxes).map(cb => cb.value);
-            shipData.qccName = checkedQCCs.join(' & ');
-
+            console.log('🔴 FORM SUBMIT EVENT FIRED!');
+            
             try {
-                let result;
-                if (editingShipIndex !== null) {
-                    // Update existing ship
-                    shipData.id = shipSchedules[editingShipIndex].id;
-                    result = await apiCall('update_ship.php', 'POST', shipData);
-                    shipSchedules[editingShipIndex] = shipData;
-                } else {
-                    // Create new ship
-                    result = await apiCall('save_ship.php', 'POST', shipData);
-                    shipSchedules.unshift(shipData);
+                // Trigger calculations PERTAMA KALI
+                calculateEndKdAndMean();
+                calculateEtcAndEtd();
+                
+                // Tunggu calculation selesai
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                console.log('📝 Starting validation...');
+                
+                // Ambil nilai dari form elements dengan cara yang lebih reliable
+                const shipName = (document.getElementById('ship-name')?.value || '').trim();
+                const company = (document.getElementById('ship-company')?.value || '').trim();
+                const code = (document.getElementById('ship-code')?.value || '').trim();
+                const destPort = (document.getElementById('dest-port')?.value || '').trim();
+                const startKd = (document.getElementById('start-kd')?.value || '').trim();
+                const length = (document.getElementById('ship-length')?.value || '').trim();
+                const draft = (document.getElementById('ship-draft')?.value || '').trim();
+                const etaTime = document.getElementById('eta-time')?.value || '';
+                const startTime = document.getElementById('start-time')?.value || '';
+                const status = document.getElementById('ship-status')?.value || '';
+                const berthSide = document.getElementById('ship-berth-side')?.value || '';
+                
+                console.log('Values:', { shipName, company, code, startKd, length, draft, etaTime, startTime });
+                
+                // Validasi SIMPLE - Hanya check required fields
+                if (!shipName) {
+                    alert("❌ Nama kapal kosong!");
+                    return;
+                }
+                if (!company) {
+                    alert("❌ Perusahaan pelayaran kosong!");
+                    return;
+                }
+                if (!code) {
+                    alert("❌ Kode kapal kosong!");
+                    return;
+                }
+                if (!length) {
+                    alert("❌ Panjang kapal kosong! (Silakan isi dengan angka)");
+                    document.getElementById('ship-length').focus();
+                    return;
+                }
+                if (!draft) {
+                    alert("❌ Draft kapal kosong!");
+                    return;
+                }
+                if (!startKd) {
+                    alert("❌ Start KD kosong!");
+                    return;
+                }
+                if (!etaTime) {
+                    alert("❌ Waktu ETA kosong!");
+                    return;
+                }
+                if (!startTime) {
+                    alert("❌ Waktu ETB kosong!");
+                    return;
+                }
+                if (!status) {
+                    alert("❌ Status kapal belum dipilih!");
+                    return;
+                }
+                if (!berthSide) {
+                    alert("❌ Berth side belum dipilih!");
+                    return;
                 }
                 
-                updateDisplay();
-                modal.style.display = 'none';
-                shipForm.classList.remove('edit-mode');
-                clearPendingForm();
-                alert('Data kapal berhasil disimpan ke database');
+                console.log('✅ Validation passed!');
+                
+                // Prepare data
+                const formData = new FormData(shipForm);
+                const shipData = Object.fromEntries(formData.entries());
+                
+                shipData.length = parseInt(shipData.length, 10) || 0;
+                shipData.draft = parseFloat(shipData.draft) || 0;
+                shipData.startKd = parseInt(shipData.startKd, 10) || 0;
+                shipData.nKd = parseInt(shipData.nKd, 10) || 0;
+                shipData.minKd = parseInt(shipData.minKd, 10) || 0;
+                shipData.bsh = parseInt(shipData.bsh, 10) || 0;
+                shipData.loadValue = parseInt(shipData.loadValue, 10) || 0;
+                shipData.dischargeValue = parseInt(shipData.dischargeValue, 10) || 0;
+                
+                const qccCheckboxes = document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]:checked');
+                const checkedQCCs = Array.from(qccCheckboxes).map(cb => cb.value);
+                shipData.qccName = checkedQCCs.join(' & ');
+                
+                console.log('📦 Ship data prepared:', shipData);
+
+                try {
+                    let result;
+                    if (editingShipIndex !== null) {
+                        // UPDATE
+                        shipData.id = shipSchedules[editingShipIndex].id;
+                        console.log('🔄 Calling UPDATE with ID:', shipData.id);
+                        result = await apiCall('update_ship.php', 'POST', shipData);
+                        console.log('✅ UPDATE result:', result);
+                        shipSchedules[editingShipIndex] = shipData;
+                    } else {
+                        // CREATE NEW
+                        console.log('➕ Calling SAVE (NEW)');
+                        result = await apiCall('save_ship.php', 'POST', shipData);
+                        console.log('✅ SAVE result:', result);
+                        shipSchedules.unshift(shipData);
+                    }
+                    
+                    // SUCCESS
+                    updateDisplay();
+                    modal.style.display = 'none';
+                    shipForm.classList.remove('edit-mode');
+                    clearPendingForm();
+                    alert('✅ Data kapal berhasil disimpan!');
+                } catch (apiError) {
+                    console.error('❌ API Error:', apiError);
+                    alert('❌ Error API: ' + apiError.message);
+                }
             } catch (error) {
-                console.error('Error saving ship:', error);
+                console.error('❌ Form Submit Error:', error);
+                alert('❌ Form Error: ' + error.message);
             }
         });
 
@@ -1465,8 +1740,8 @@ if (savedQCCs) {
         document.addEventListener('mouseup', () => {
             activeDraggableLine = null; 
         });
-      
-
+        
+        console.log('✅ setupEventListeners() COMPLETE - all event listeners attached!');
     } 
     
     initialize();

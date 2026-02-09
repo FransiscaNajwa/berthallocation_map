@@ -689,6 +689,19 @@ h2#report-subtitle {
     background-color: #ffffff;
     cursor: text;
 }
+#comm-log-table .comm-datetime-input {
+    width: 100%;
+    padding: 4px 2px;
+    border: none;
+    background-color: #ffffff;
+    font-size: 0.9em;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+}
+#comm-log-table .comm-datetime-input:focus {
+    outline: 2px solid #4472C4;
+    background-color: #f0f8ff;
+}
 #comm-log-table th:first-child {
     text-align: center;
     width: 10px;

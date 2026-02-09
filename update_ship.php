@@ -17,7 +17,7 @@ $code = $data['code'] ?? null;
 $length = $data['length'] ?? null;
 $draft = $data['draft'] ?? null;
 $destPort = $data['destPort'] ?? null;
-$berthLocation = $data['berthLocation'] ?? null;
+$startKd = $data['startKd'] ?? null;
 $nKd = $data['nKd'] ?? null;
 $minKd = $data['minKd'] ?? null;
 $loadValue = $data['loadValue'] ?? 0;
@@ -59,18 +59,14 @@ if ($company !== null && $company !== '') {
 // Perhatikan: length adalah INT di database, bukan FLOAT
 $length = $length !== null && $length !== '' ? intval($length) : 0;
 $draft = $draft !== null && $draft !== '' ? floatval($draft) : 0;
-$berthLocation = $berthLocation !== null && $berthLocation !== '' ? intval($berthLocation) : 0;
+$startKd = $startKd !== null && $startKd !== '' ? intval($startKd) : 0;
 $nKd = $nKd !== null && $nKd !== '' ? intval($nKd) : 0;
 $minKd = $minKd !== null && $minKd !== '' ? intval($minKd) : 0;
 $loadValue = $loadValue !== null && $loadValue !== '' ? intval($loadValue) : 0;
 $dischargeValue = $dischargeValue !== null && $dischargeValue !== '' ? intval($dischargeValue) : 0;
-error_log("Type casting done. length=" . $length . "(int), draft=" . $draft . "(float)");
+error_log("Type casting done. length=" . $length . "(int), draft=" . $draft . "(float), startKd=" . $startKd);
 
-// Simpan nilai KD langsung ke berthLocation tanpa validasi ke tabel berths
-if ($berthLocation === '') {
-    $berthLocation = 0;
-}
-
+// Simpan nilai sebelum bind_param
 if ($bsh === '' || $bsh === null || $bsh === 'null') {
     $bsh = 0;
 } else {
@@ -100,7 +96,7 @@ $stmt->bind_param(
     $length,
     $draft,
     $destPort,
-    $berthLocation,
+    $startKd,
     $nKd,
     $minKd,
     $loadValue,
