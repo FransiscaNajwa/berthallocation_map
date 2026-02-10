@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const KD_HEIGHT_UNIT = 40;
     const KD_MIN = Math.min(...KD_MARKERS);
     const PENDING_FORM_KEY = 'pendingShipForm';
-    const API_BASE_URL = 'http://localhost:3001'; // Backend API URL
+    const API_BASE_URL = 'http://localhost/ba_map_app'; // Backend API URL (PHP)
 
     let shipSchedules = [];
     let editingShipIndex = null;
@@ -248,6 +248,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
+            const masterShip = masterShips.find(s => (s.ship_name || '').toLowerCase() === (ship.shipName || '').toLowerCase());
+            const codeParts = [];
+            if (ship.code) codeParts.push(ship.code);
+            if (ship.voyage) codeParts.push(ship.voyage);
+            if (masterShip && masterShip.year) codeParts.push(masterShip.year);
+            if (masterShip && masterShip.window) codeParts.push(masterShip.window);
+            const wsCodeValue = ship.wsCode || ship.ws_code || '';
+            const baseDetails = codeParts.length ? codeParts.join(' / ') : 'N/A';
+            const codeDetails = wsCodeValue ? `${baseDetails} ${wsCodeValue}` : baseDetails;
+
             const wrapper = document.createElement('div');
             wrapper.className = 'ship-wrapper';
             wrapper.style.top = `${finalTop}px`;
@@ -261,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="ship-header">
                         <div class="ship-header-text">
                             <span class="ship-main-title">${company} ${ship.shipName || 'N/A'}</span>
-                            <span class="ship-sub-title">${ship.code || 'N/A'}</span>
+                            <span class="ship-sub-title">${codeDetails}</span>
                         </div>
                         ${logoUrl ? `<img src="${logoUrl}" class="ship-logo" alt="${company} logo" onerror="this.style.display='none';"/>` : ''}
                     </div>
@@ -429,13 +439,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const rowData = {
                     dateTime: dateTimeValue,
-                    petugas: contentEditableCells[0].textContent,
-                    stakeholder: contentEditableCells[1].textContent,
-                    pic: contentEditableCells[2].textContent,
-                    remark: contentEditableCells[3].textContent,
-                    commChannel: contentEditableCells[4].textContent,
+                    petugas: contentEditableCells[0].textContent.trim(),
+                    stakeholder: contentEditableCells[1].textContent.trim(),
+                    pic: contentEditableCells[2].textContent.trim(),
+                    remark: contentEditableCells[3].textContent.trim(),
+                    commChannel: contentEditableCells[4].textContent.trim(),
                 };
-                data.push(rowData);
+                
+                // Hanya push jika baris benar-benar ada isinya (tidak semua field kosong)
+                if (rowData.dateTime || rowData.petugas || rowData.stakeholder || rowData.pic || rowData.remark) {
+                    data.push(rowData);
+                }
             }
         });
 
@@ -477,6 +491,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ============= COMMUNICATION LOG FUNCTIONS (DYNAMIC ROWS) =============
+    
+    // Fungsi untuk menambah baris baru di communication log
+    function addCommLogRow(data = null) {
+        const table = document.getElementById('comm-log-table');
+        const tbody = table.querySelector('tbody');
+        const rowCount = tbody.querySelectorAll('tr').length;
+        const rowNumber = rowCount + 1;
+
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${rowNumber}</td>
+            <td><input type="datetime-local" class="comm-datetime-input"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true">WAG</td>
+            <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+        `;
+
+        // Jika ada data, isi baris dengan data tersebut
+        if (data) {
+            newRow.setAttribute('data-id', data.id);
+            
+            const datetimeInput = newRow.querySelector('input[type="datetime-local"]');
+            if (datetimeInput && data.dateTime) {
+                const dateTimePart = data.dateTime.split(' ');
+                if (dateTimePart.length >= 2) {
+                    const datePart = dateTimePart[0];
+                    const timePart = dateTimePart[1].substring(0, 5);
+                    datetimeInput.value = datePart + 'T' + timePart;
+                }
+            }
+
+            const contentEditableCells = newRow.querySelectorAll('td[contenteditable="true"]');
+            if (contentEditableCells.length >= 5) {
+                contentEditableCells[0].textContent = data.petugas || '';
+                contentEditableCells[1].textContent = data.stakeholder || '';
+                contentEditableCells[2].textContent = data.pic || '';
+                contentEditableCells[3].textContent = data.remark || '';
+                contentEditableCells[4].textContent = data.commChannel || 'WAG';
+            }
+        }
+
+        tbody.appendChild(newRow);
+        
+        // Setup delete button untuk baris baru
+        const deleteBtn = newRow.querySelector('.btn-delete-row');
+        setupSingleDeleteButton(deleteBtn);
+        
+        // Setup auto-add listener untuk baris baru
+        setupRowAutoAdd(newRow);
+        
+        return newRow;
+    }
+
+    // Update nomor urut semua baris
+    function updateCommLogRowNumbers() {
+        const table = document.getElementById('comm-log-table');
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            row.querySelector('td:first-child').textContent = index + 1;
+        });
+    }
+
+    // Setup listener untuk auto-add baris baru ketika user mulai mengisi
+    function setupRowAutoAdd(row) {
+        const datetimeInput = row.querySelector('input[type="datetime-local"]');
+        const editableCells = row.querySelectorAll('td[contenteditable="true"]');
+
+        const checkAndAddRow = () => {
+            const table = document.getElementById('comm-log-table');
+            const tbody = table.querySelector('tbody');
+            const lastRow = tbody.querySelector('tr:last-child');
+            
+            // Jika baris ini adalah baris terakhir dan mulai diisi, tambah baris baru
+            if (row === lastRow) {
+                const hasContent = datetimeInput.value || 
+                    Array.from(editableCells).some(cell => cell.textContent.trim() && cell.textContent.trim() !== 'WAG');
+                
+                if (hasContent) {
+                    // Cek apakah sudah ada baris kosong berikutnya
+                    const nextRow = row.nextElementSibling;
+                    if (!nextRow) {
+                        console.log('➕ Auto-adding new row');
+                        addCommLogRow();
+                    }
+                }
+            }
+        };
+
+        datetimeInput.addEventListener('change', checkAndAddRow);
+        editableCells.forEach(cell => {
+            cell.addEventListener('input', checkAndAddRow);
+        });
+    }
+
     async function loadCommLog() {
         console.log('📥 Loading Communication Log from database...');
         
@@ -490,105 +602,286 @@ document.addEventListener('DOMContentLoaded', () => {
                 result = JSON.parse(responseText);
             } catch (e) {
                 console.error('❌ Failed to parse JSON:', e);
+                // Tetap tambahkan 1 baris kosong jika error
+                addCommLogRow();
                 return;
             }
-
-            if (result.status !== 'success' || !result.data) {
-                console.log('📭 No communication log data found or error:', result.message);
-                return;
-            }
-
-            const data = result.data;
-            console.log('✅ Loaded', data.length, 'communication log entries');
 
             const table = document.getElementById('comm-log-table');
-            const rows = table.querySelectorAll('tbody tr');
+            const tbody = table.querySelector('tbody');
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
 
-            rows.forEach((row, index) => {
-                if (!data[index]) return;
+            if (result.status === 'success' && result.data && result.data.length > 0) {
+                const data = result.data;
+                console.log('✅ Loaded', data.length, 'communication log entries');
 
-                // Store the ID in data attribute for deletion
-                row.setAttribute('data-id', data[index].id);
-
-                // Set datetime input
-                const datetimeInput = row.querySelector('input[type="datetime-local"]');
-                if (datetimeInput && data[index].dateTime) {
-                    // Convert MySQL format (2026-02-09 15:30:00) ke datetime-local (2026-02-09T15:30)
-                    const dateTimePart = data[index].dateTime.split(' ');
-                    if (dateTimePart.length >= 2) {
-                        const datePart = dateTimePart[0]; // 2026-02-09
-                        const timePart = dateTimePart[1].substring(0, 5); // 15:30 (exclude seconds)
-                        datetimeInput.value = datePart + 'T' + timePart;
-                    }
-                }
-
-                // Set contenteditable cells
-                const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
-                if (contentEditableCells.length >= 5) {
-                    contentEditableCells[0].textContent = data[index].petugas || '';
-                    contentEditableCells[1].textContent = data[index].stakeholder || '';
-                    contentEditableCells[2].textContent = data[index].pic || '';
-                    contentEditableCells[3].textContent = data[index].remark || '';
-                    contentEditableCells[4].textContent = data[index].commChannel || 'WAG';
-                }
-            });
+                // Tambahkan baris untuk setiap data
+                data.forEach(item => {
+                    addCommLogRow(item);
+                });
+            }
+            
+            // Selalu tambahkan 1 baris kosong di akhir untuk input baru
+            addCommLogRow();
 
             console.log('✅ Communication log loaded from database');
         } catch (error) {
             console.error('❌ Error loading communication log:', error);
+            // Tetap tambahkan 1 baris kosong jika error
+            addCommLogRow();
         }
+    }
+
+    // Setup delete button untuk satu tombol (digunakan saat menambah baris baru)
+    function setupSingleDeleteButton(btn) {
+        btn.addEventListener('click', async () => {
+            const row = btn.closest('tr');
+            const rowId = row.getAttribute('data-id');
+            const table = document.getElementById('comm-log-table');
+            const tbody = table.querySelector('tbody');
+            const rowCount = tbody.querySelectorAll('tr').length;
+
+            // Jangan hapus jika hanya tersisa 1 baris
+            if (rowCount === 1) {
+                // Clear isi baris saja
+                const datetimeInput = row.querySelector('input[type="datetime-local"]');
+                if (datetimeInput) datetimeInput.value = '';
+                
+                const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
+                contentEditableCells.forEach((cell, idx) => {
+                    if (idx < contentEditableCells.length - 1) {
+                        cell.textContent = '';
+                    } else {
+                        cell.textContent = 'WAG';
+                    }
+                });
+                
+                row.removeAttribute('data-id');
+                console.log('🗑️ Row cleared (last row)');
+                return;
+            }
+
+            if (confirm('Anda yakin ingin menghapus baris komunikasi log ini?')) {
+                try {
+                    // Delete dari database jika ada ID
+                    if (rowId) {
+                        const deleteResponse = await fetch(`delete_data.php?id=${rowId}&type=communication`);
+                        const deleteResult = await deleteResponse.json();
+                        
+                        if (deleteResult.status !== 'success') {
+                            alert('❌ Gagal menghapus dari database: ' + deleteResult.message);
+                            return;
+                        }
+                        console.log('✅ Row deleted from database, ID:', rowId);
+                    }
+
+                    // Remove the row from UI
+                    row.remove();
+                    
+                    // Update nomor urut
+                    updateCommLogRowNumbers();
+                    
+                    console.log('🗑️ Row deleted and removed');
+                    alert('✅ Baris komunikasi log berhasil dihapus!');
+                } catch (error) {
+                    console.error('❌ Error deleting row:', error);
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        });
     }
 
     function setupCommLogDeleteButtons() {
         const table = document.getElementById('comm-log-table');
         const deleteButtons = table.querySelectorAll('.btn-delete-row');
 
-        deleteButtons.forEach((btn, index) => {
-            btn.addEventListener('click', async () => {
-                const row = btn.closest('tr');
-                const rowId = row.getAttribute('data-id');
-
-                if (confirm('Anda yakin ingin menghapus baris komunikasi log ini?')) {
-                    try {
-                        // Delete dari database jika ada ID
-                        if (rowId) {
-                            const deleteResponse = await fetch(`delete_data.php?id=${rowId}&type=communication`);
-                            const deleteResult = await deleteResponse.json();
-                            
-                            if (deleteResult.status !== 'success') {
-                                alert('❌ Gagal menghapus dari database: ' + deleteResult.message);
-                                return;
-                            }
-                            console.log('✅ Row deleted from database, ID:', rowId);
-                        }
-
-                        // Clear the row in UI
-                        const datetimeInput = row.querySelector('input[type="datetime-local"]');
-                        if (datetimeInput) {
-                            datetimeInput.value = '';
-                        }
-
-                        const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
-                        contentEditableCells.forEach((cell, idx) => {
-                            if (idx < contentEditableCells.length - 1) {
-                                cell.textContent = '';
-                            } else {
-                                cell.textContent = 'WAG';
-                            }
-                        });
-
-                        // Remove data-id attribute since we cleared the row
-                        row.removeAttribute('data-id');
-                        
-                        console.log('🗑️ Row', index + 1, 'deleted and cleared');
-                        alert('✅ Baris komunikasi log berhasil dihapus!');
-                    } catch (error) {
-                        console.error('❌ Error deleting row:', error);
-                        alert('❌ Error: ' + error.message);
-                    }
-                }
-            });
+        deleteButtons.forEach(btn => {
+            // Remove old listeners (jika ada) dengan clone & replace
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Setup listener baru
+            setupSingleDeleteButton(newBtn);
         });
+    }
+
+    // ============= MASTER SHIPS FUNCTIONS =============
+    let masterShips = [];
+    let editingMasterShipId = null;
+
+    async function loadMasterShips() {
+        try {
+            const response = await fetch('get_master_ships.php');
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                masterShips = result.data || [];
+                console.log('✅ Loaded', masterShips.length, 'master ships');
+                updateMasterShipsTable();
+                updateShipNameDatalist();
+                return true;
+            } else {
+                console.error('❌ Failed to load master ships:', result.message);
+                masterShips = [];
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error loading master ships:', error);
+            masterShips = [];
+            return false;
+        }
+    }
+
+    function updateMasterShipsTable() {
+        const tbody = document.querySelector('#master-ships-table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (masterShips.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">Belum ada data kapal</td></tr>';
+            return;
+        }
+
+        masterShips.forEach((ship, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${index + 1}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${ship.ship_name || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${ship.shipping_line || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${ship.ship_code || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${ship.length || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${ship.draft || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                    <button class="btn btn-sm" onclick="editMasterShip(${ship.id})" style="padding: 5px 10px; margin-right: 5px; background: #007bff; color: white;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm" onclick="deleteMasterShip(${ship.id})" style="padding: 5px 10px; background: #dc3545; color: white;">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateShipNameDatalist() {
+        const datalist = document.getElementById('ship-name-suggestions');
+        if (!datalist) return;
+
+        datalist.innerHTML = '';
+        masterShips.forEach(ship => {
+            const option = document.createElement('option');
+            option.value = ship.ship_name;
+            datalist.appendChild(option);
+        });
+    }
+
+    async function saveMasterShip(formData) {
+        try {
+            const response = await fetch('save_master_ship.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                console.log('✅ Master ship saved successfully');
+                await loadMasterShips();
+                return true;
+            } else {
+                console.error('❌ Failed to save master ship:', result.message);
+                alert('❌ Gagal menyimpan: ' + result.message);
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error saving master ship:', error);
+            alert('❌ Error: ' + error.message);
+            return false;
+        }
+    }
+
+    window.editMasterShip = function(id) {
+        const ship = masterShips.find(s => s.id == id);
+        if (!ship) return;
+
+        editingMasterShipId = id;
+        
+        // Fill form
+        document.getElementById('master-ship-id').value = ship.id;
+        document.getElementById('master-ship-name').value = ship.ship_name || '';
+        document.getElementById('master-shipping-line').value = ship.shipping_line || '';
+        document.getElementById('master-ship-code').value = ship.ship_code || '';
+        document.getElementById('master-year').value = ship.year || '';
+        document.getElementById('master-window').value = ship.window || '';
+        document.getElementById('master-length').value = ship.length || '';
+        document.getElementById('master-draft').value = ship.draft || '';
+        document.getElementById('master-destination-port').value = ship.destination_port || '';
+        document.getElementById('master-next-port').value = ship.next_port || '';
+
+        document.getElementById('master-ship-form-title').textContent = 'Edit Data Kapal';
+        document.getElementById('master-ship-form-container').style.display = 'block';
+    };
+
+    window.deleteMasterShip = async function(id) {
+        if (!confirm('Anda yakin ingin menghapus data kapal ini?')) return;
+
+        try {
+            const response = await fetch(`delete_data.php?id=${id}&type=master_ship`);
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                console.log('✅ Master ship deleted successfully');
+                alert('✅ Data kapal berhasil dihapus!');
+                await loadMasterShips();
+            } else {
+                alert('❌ Gagal menghapus: ' + result.message);
+            }
+        } catch (error) {
+            console.error('❌ Error deleting master ship:', error);
+            alert('❌ Error: ' + error.message);
+        }
+    };
+
+    function autoFillShipDataFromMaster(shipName) {
+        const ship = masterShips.find(s => s.ship_name.toLowerCase() === shipName.toLowerCase());
+        if (!ship) return;
+
+        console.log('🔄 Auto-filling ship data from master:', shipName);
+
+        // Auto-fill fields
+        if (ship.shipping_line) {
+            const companySelect = document.getElementById('ship-company');
+            companySelect.value = ship.shipping_line;
+        }
+        if (ship.ship_code) document.getElementById('ship-code').value = ship.ship_code;
+        if (ship.length) document.getElementById('ship-length').value = ship.length;
+        if (ship.draft) document.getElementById('ship-draft').value = ship.draft;
+        
+        // Combine destination_port and next_port for dest-port field
+        let destPortValue = '';
+        if (ship.destination_port) destPortValue += ship.destination_port;
+        if (ship.next_port) {
+            if (destPortValue) destPortValue += ' / ';
+            destPortValue += ship.next_port;
+        }
+        if (destPortValue) document.getElementById('dest-port').value = destPortValue;
+
+        console.log('✅ Ship data auto-filled');
+        
+        // Trigger calculation untuk end KD dan mean
+        setTimeout(() => {
+            const calculateEndKdAndMean = window.calculateEndKdAndMean;
+            if (typeof calculateEndKdAndMean === 'function') {
+                calculateEndKdAndMean();
+            }
+        }, 100);
     }
 
      function savePendingForm() {
@@ -658,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initialize() {
         // Load data from database first, then update UI
         await loadDataFromDatabase();
+        await loadMasterShips();
         updateDisplay(); 
         setupEventListeners();
         await loadCommLog();
@@ -884,6 +1178,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('ship-company').value = ship.company || '';
             document.getElementById('ship-name').value = ship.shipName || '';
             document.getElementById('ship-code').value = ship.code || '';
+            document.getElementById('ship-voyage').value = ship.voyage || '';
+            document.getElementById('ship-ws-code').value = ship.wsCode || ship.ws_code || '';
             document.getElementById('ship-length').value = ship.length || '';
             document.getElementById('ship-draft').value = ship.draft || '';
             document.getElementById('dest-port').value = ship.destPort || '';
@@ -1015,8 +1311,8 @@ document.addEventListener('DOMContentLoaded', () => {
         restModal.style.display = 'block';
     }
 
-    async function exportToPDF(type = 'weekly') {
-        console.log(`[PDF Export] Starting export process for type: ${type}`);
+    async function exportToPDF(type = 'weekly', customStartDate = null, customEndDate = null) {
+        console.log(`[PDF Export] Starting export process for type: ${type}`, { customStartDate, customEndDate });
         const { jsPDF } = window.jspdf;
         const pdfHeader = document.getElementById('pdf-header');
         const pelindoLogoInHeader = pdfHeader.querySelector('.pdf-logo');
@@ -1095,27 +1391,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const dayWidth = 24 * hourWidth;
             const yAxisWidth = yAxisColumn ? yAxisColumn.offsetWidth : 0;
 
-            // --- LOGIKA DAILY VS WEEKLY ---
-            if (type === 'daily') {
-                let today = new Date(); today.setHours(0,0,0,0);
+            // --- LOGIKA BERBAGAI TIPE PDF ---
+            if (type === '1-2days') {
+                // 1-2 Hari (Hari Ini & Besok)
                 let selectedDay = new Date(currentStartDate);
                 let nextDay = new Date(selectedDay);
                 nextDay.setDate(selectedDay.getDate() + 1);
 
                 pdfDateRangeStr = `${formatDateForPDF(selectedDay)} to ${formatDateForPDF(nextDay)}`;
-                pdfFileName = `Berth-Allocation-Harian-${selectedDay.toISOString().split('T')[0]}.pdf`;
+                pdfFileName = `Berth-Allocation-1-2Hari-${selectedDay.toISOString().split('T')[0]}.pdf`;
 
-                let dayDiff = 0; // Sesuaikan logic ini jika ingin pilih hari spesifik
                 captureWidth = yAxisWidth + (2 * dayWidth); 
-                targetScrollLeft = dayDiff * dayWidth; 
+                targetScrollLeft = 0; 
                 captureStartX = targetScrollLeft; 
 
                 gridScroll.style.overflowX = 'hidden';
                 gridScroll.scrollLeft = targetScrollLeft;
                 legendsScrollContainer.scrollLeft = 0;
 
-            } else { 
-                // WEEKLY
+            } else if (type === 'weekly') {
+                // Mingguan (7 hari)
                 let startDate = new Date(currentStartDate);
                 let endDate = new Date(startDate);
                 endDate.setDate(startDate.getDate() + 6);
@@ -1129,12 +1424,78 @@ document.addEventListener('DOMContentLoaded', () => {
                 gridScroll.style.overflowX = 'visible';
                 gridScroll.scrollLeft = 0;
                 legendsScrollContainer.scrollLeft = 0;
+
+            } else if (type === 'monthly') {
+                // Bulanan (30 hari dari tanggal sekarang)
+                let startDate = new Date(currentStartDate);
+                let endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 29); // 30 hari
+                
+                pdfDateRangeStr = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+                pdfFileName = `Berth-Allocation-Bulanan-${startDate.toISOString().split('T')[0]}.pdf`;
+
+                const daysInRange = 30;
+                captureWidth = yAxisWidth + (daysInRange * dayWidth);
+                captureStartX = 0;
+                targetScrollLeft = 0;
+                
+                gridScroll.style.overflowX = 'visible';
+                gridScroll.scrollLeft = 0;
+                legendsScrollContainer.scrollLeft = 0;
+
+            } else if (type === 'custom') {
+                // Custom Date Range
+                if (!customStartDate || !customEndDate) {
+                    alert('❌ Tanggal mulai dan selesai harus dipilih!');
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = originalBtnHTML;
+                    return;
+                }
+
+                const start = new Date(customStartDate);
+                const end = new Date(customEndDate);
+                
+                if (start > end) {
+                    alert('❌ Tanggal mulai tidak boleh lebih besar dari tanggal selesai!');
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = originalBtnHTML;
+                    return;
+                }
+
+                const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                
+                pdfDateRangeStr = `${formatDate(start)} - ${formatDate(end)}`;
+                pdfFileName = `Berth-Allocation-Custom-${start.toISOString().split('T')[0]}_to_${end.toISOString().split('T')[0]}.pdf`;
+
+                captureWidth = yAxisWidth + (daysDiff * dayWidth);
+                captureStartX = 0;
+                targetScrollLeft = 0;
+                
+                gridScroll.style.overflowX = 'visible';
+                gridScroll.scrollLeft = 0;
+                legendsScrollContainer.scrollLeft = 0;
+
+            } else {
+                // Default: Weekly
+                let startDate = new Date(currentStartDate);
+                let endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                pdfDateRangeStr = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+
+                pdfFileName = `Berth-Allocation-Default-${startDate.toISOString().split('T')[0]}.pdf`;
+                captureWidth = fullWidth;
+                captureStartX = 0;
+                targetScrollLeft = 0;
+                
+                gridScroll.style.overflowX = 'visible';
+                gridScroll.scrollLeft = 0;
+                legendsScrollContainer.scrollLeft = 0;
             }
 
             // --- SET LEBAR UNTUK CAPTURE ---
             pdfHeader.style.width = `${captureWidth}px`;
             berthMapContainer.style.width = `${captureWidth}px`;
-            legendsScrollContainer.style.width = (type === 'daily' ? `${legendsFullWidth}px` : `${captureWidth}px`);
+            legendsScrollContainer.style.width = (type === '1-2days' ? `${legendsFullWidth}px` : `${captureWidth}px`);
             
             const dateRangeEl = pdfHeader.querySelector('.pdf-date-range');
             if(dateRangeEl) dateRangeEl.textContent = pdfDateRangeStr;
@@ -1143,7 +1504,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(berthDividerLinePDF) berthDividerLinePDF.style.display = 'block';
             if(currentTimeIndicatorPDF) currentTimeIndicatorPDF.style.display = 'block'; 
 
-            if (type === 'weekly' && yAxisColumn) {
+            if (type !== '1-2days' && yAxisColumn) {
                 yAxisColumn.style.position = 'relative'; 
                 yAxisColumn.style.left = 'auto';
                 yAxisColumn.style.zIndex = '18';
@@ -1171,7 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const optionsLegends = {
                 ...commonOptions,
-                width: (type === 'daily' ? legendsFullWidth : captureWidth),
+                width: (type === '1-2days' ? legendsFullWidth : captureWidth),
                 height: legendsScrollContainer.scrollHeight,
                 x: 0, 
             };
@@ -1275,25 +1636,13 @@ document.addEventListener('DOMContentLoaded', () => {
             clearCommLogBtn.addEventListener('click', async () => {
                 if (confirm('Anda yakin ingin menghapus semua isi Communication Log?')) {
                     const table = document.getElementById('comm-log-table');
-                    const rows = table.querySelectorAll('tbody tr');
+                    const tbody = table.querySelector('tbody');
                     
-                    rows.forEach(row => {
-                        // Clear datetime input
-                        const datetimeInput = row.querySelector('input[type="datetime-local"]');
-                        if (datetimeInput) {
-                            datetimeInput.value = '';
-                        }
-
-                        // Clear contenteditable cells (except Comm Channel)
-                        const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
-                        contentEditableCells.forEach((cell, idx) => {
-                            if (idx < contentEditableCells.length - 1) {
-                                cell.textContent = '';
-                            } else {
-                                cell.textContent = 'WAG';
-                            }
-                        });
-                    });
+                    // Clear semua baris
+                    tbody.innerHTML = '';
+                    
+                    // Tambahkan 1 baris kosong
+                    addCommLogRow();
                     
                     // Save to database (empty data)
                     await saveCommLog();
@@ -1335,6 +1684,98 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
             modal.style.display = 'block';
         });
+
+        // Master Ships Modal Event Listeners
+        const masterShipsBtn = document.getElementById('master-ships-btn');
+        const masterShipsModal = document.getElementById('master-ships-modal');
+        const closeMasterShipsModal = document.getElementById('close-master-ships-modal');
+        const addNewMasterShipBtn = document.getElementById('add-new-master-ship-btn');
+        const masterShipForm = document.getElementById('master-ship-form');
+        const masterShipFormContainer = document.getElementById('master-ship-form-container');
+        const cancelMasterShipForm = document.getElementById('cancel-master-ship-form');
+
+        if (masterShipsBtn) {
+            masterShipsBtn.addEventListener('click', async () => {
+                await loadMasterShips();
+                masterShipFormContainer.style.display = 'none';
+                masterShipsModal.style.display = 'block';
+            });
+        }
+
+        if (closeMasterShipsModal) {
+            closeMasterShipsModal.addEventListener('click', () => {
+                masterShipsModal.style.display = 'none';
+                masterShipFormContainer.style.display = 'none';
+                masterShipForm.reset();
+                document.getElementById('master-ship-id').value = ''; // Clear ID when closing modal
+            });
+        }
+
+        if (addNewMasterShipBtn) {
+            addNewMasterShipBtn.addEventListener('click', () => {
+                editingMasterShipId = null;
+                masterShipForm.reset();
+                document.getElementById('master-ship-id').value = ''; // Clear ID explicitly
+                document.getElementById('master-ship-form-title').textContent = 'Tambah Data Kapal';
+                masterShipFormContainer.style.display = 'block';
+            });
+        }
+
+        if (cancelMasterShipForm) {
+            cancelMasterShipForm.addEventListener('click', () => {
+                masterShipForm.reset();
+                document.getElementById('master-ship-id').value = ''; // Clear ID explicitly
+                masterShipFormContainer.style.display = 'none';
+            });
+        }
+
+        if (masterShipForm) {
+            masterShipForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const idValue = document.getElementById('master-ship-id').value;
+                const lengthValue = document.getElementById('master-length').value;
+                const draftValue = document.getElementById('master-draft').value;
+                
+                const formData = {
+                    id: (idValue && idValue !== '') ? parseInt(idValue) : null,
+                    ship_name: document.getElementById('master-ship-name').value,
+                    shipping_line: document.getElementById('master-shipping-line').value,
+                    ship_code: document.getElementById('master-ship-code').value,
+                    year: document.getElementById('master-year').value,
+                    window: document.getElementById('master-window').value,
+                    length: (lengthValue && lengthValue !== '') ? parseFloat(lengthValue) : null,
+                    draft: (draftValue && draftValue !== '') ? parseFloat(draftValue) : null,
+                    destination_port: document.getElementById('master-destination-port').value,
+                    next_port: document.getElementById('master-next-port').value
+                };
+
+                console.log('📤 Submitting master ship data:', formData);
+
+                const success = await saveMasterShip(formData);
+                if (success) {
+                    masterShipForm.reset();
+                    masterShipFormContainer.style.display = 'none';
+                    alert('✅ Data kapal berhasil disimpan!');
+                }
+            });
+        }
+
+        // Auto-fill ship data when ship name is selected/changed
+        const shipNameInput = document.getElementById('ship-name');
+        if (shipNameInput) {
+            shipNameInput.addEventListener('change', (e) => {
+                autoFillShipDataFromMaster(e.target.value);
+            });
+            // Also listen to input event for instant autocomplete
+            shipNameInput.addEventListener('input', (e) => {
+                const exactMatch = masterShips.find(s => s.ship_name.toLowerCase() === e.target.value.toLowerCase());
+                if (exactMatch) {
+                    autoFillShipDataFromMaster(e.target.value);
+                }
+            });
+        }
+
         closeModalBtn.addEventListener('click', () => {
             modal.style.display = 'none';
             shipForm.classList.remove('edit-mode');
@@ -1356,6 +1797,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.target == restModal) {
                 restModal.style.display = 'none';
                 restForm.classList.remove('edit-mode');
+            }
+            if (event.target == masterShipsModal) {
+                masterShipsModal.style.display = 'none';
+                masterShipFormContainer.style.display = 'none';
+                masterShipForm.reset();
+                document.getElementById('master-ship-id').value = ''; // Clear ID when clicking outside
             }
 
             if (pdfOptionsContainer.style.display === 'block' && !pdfDropdownBtn.contains(event.target)) {
@@ -1425,17 +1872,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                // Buat date object dengan waktu lokal
+                // Buat date object dengan waktu lokal (ETB)
                 const etbDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
                 
-                // Hitung ETD = ETB + ((Discharge + Loading) / BSH) jam
+                // RUMUS BARU: ETC = ETB + ((Discharge + Loading) / BSH) - 1 jam
                 const workingHours = (discharge + loading) / bsh;
-                const etdDate = new Date(etbDate.getTime()); // Clone date
-                const etdTotalMinutes = etdDate.getHours() * 60 + etdDate.getMinutes() + (workingHours * 60);
-                etdDate.setHours(0, 0, 0, 0); // Reset ke 00:00
-                etdDate.setMinutes(etdDate.getMinutes() + etdTotalMinutes);
+                const etcDate = new Date(etbDate.getTime()); // Clone ETB date
                 
-                // Format ETD ke datetime-local format
+                // Tambahkan working hours, lalu kurangi 1 jam
+                const etcTotalMinutes = etcDate.getHours() * 60 + etcDate.getMinutes() + (workingHours * 60) - 60; // -60 menit = -1 jam
+                etcDate.setHours(0, 0, 0, 0); // Reset ke 00:00
+                etcDate.setMinutes(etcDate.getMinutes() + etcTotalMinutes);
+                
+                // Format datetime ke datetime-local format
                 const formatDateTime = (date) => {
                     const y = date.getFullYear();
                     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -1445,13 +1894,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `${y}-${m}-${d}T${h}:${min}`;
                 };
                 
-                etdInput.value = formatDateTime(etdDate);
-                
-                // Hitung ETC = ETD - 1 jam
-                const etcDate = new Date(etdDate.getTime()); // Clone ETD date
-                etcDate.setHours(etcDate.getHours() - 1);
-                
                 etcInput.value = formatDateTime(etcDate);
+                
+                // RUMUS BARU: ETD = ETC + 1 jam
+                // ETD selalu mengikuti ETC + 1 jam (otomatis update)
+                const etdDate = new Date(etcDate.getTime()); // Clone ETC date
+                etdDate.setHours(etdDate.getHours() + 1); // Tambah 1 jam
+                etdInput.value = formatDateTime(etdDate);
             } catch (error) {
                 console.error('Error calculating ETC/ETD:', error);
             }
@@ -1486,6 +1935,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const company = (document.getElementById('ship-company')?.value || '').trim();
                 const code = (document.getElementById('ship-code')?.value || '').trim();
                 const destPort = (document.getElementById('dest-port')?.value || '').trim();
+                const wsCode = (document.getElementById('ship-ws-code')?.value || '').trim();
                 const startKd = (document.getElementById('start-kd')?.value || '').trim();
                 const length = (document.getElementById('ship-length')?.value || '').trim();
                 const draft = (document.getElementById('ship-draft')?.value || '').trim();
@@ -1502,20 +1952,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 if (!company) {
-                    alert("❌ Perusahaan pelayaran kosong!");
+                    alert("❌ Pelayaran kosong! Silakan pilih nama kapal dari master data atau tambahkan ke master data terlebih dahulu.");
                     return;
                 }
                 if (!code) {
-                    alert("❌ Kode kapal kosong!");
+                    alert("❌ Kode kapal kosong! Silakan pilih nama kapal dari master data atau tambahkan ke master data terlebih dahulu.");
                     return;
                 }
+                if (!wsCode) {
+                    alert("❌ Kode WS kosong! Wajib diisi.");
+                    return;
+                }
+                
+                // Validasi BSH
+                const bsh = (document.getElementById('ship-bsh')?.value || '').trim();
+                if (!bsh) {
+                    alert("❌ BSH kosong! Wajib diisi.");
+                    return;
+                }
+                
+                // Validasi Berth Side
+                const berthSideCheck = (document.getElementById('ship-berth-side')?.value || '').trim();
+                if (!berthSideCheck) {
+                    alert("❌ Berth Side kosong! Pilih P atau S.");
+                    return;
+                }
+                
+                // Validasi QCC - minimal 1 checkbox harus dipilih
+                const qccCheckboxes = document.querySelectorAll('input[name="qcc-options"]:checked');
+                if (qccCheckboxes.length === 0) {
+                    alert("❌ QCC kosong! Pilih minimal 1 QCC.");
+                    return;
+                }
+                
+                // Validasi Discharge
+                const discharge = document.getElementById('discharge-value')?.value;
+                if (discharge === null || discharge === undefined || discharge === '') {
+                    alert("❌ Discharge kosong! Wajib diisi.");
+                    return;
+                }
+                
+                // Validasi Loading
+                const loading = document.getElementById('load-value')?.value;
+                if (loading === null || loading === undefined || loading === '') {
+                    alert("❌ Loading kosong! Wajib diisi.");
+                    return;
+                }
+                
                 if (!length) {
-                    alert("❌ Panjang kapal kosong! (Silakan isi dengan angka)");
-                    document.getElementById('ship-length').focus();
+                    alert("❌ Panjang kapal kosong! Silakan pilih nama kapal dari master data atau tambahkan ke master data terlebih dahulu.");
                     return;
                 }
                 if (!draft) {
-                    alert("❌ Draft kapal kosong!");
+                    alert("❌ Draft kapal kosong! Silakan pilih nama kapal dari master data atau tambahkan ke master data terlebih dahulu.");
                     return;
                 }
                 if (!startKd) {
@@ -1554,8 +2043,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 shipData.loadValue = parseInt(shipData.loadValue, 10) || 0;
                 shipData.dischargeValue = parseInt(shipData.dischargeValue, 10) || 0;
                 
-                const qccCheckboxes = document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]:checked');
-                const checkedQCCs = Array.from(qccCheckboxes).map(cb => cb.value);
+                const selectedQccCheckboxes = document.querySelectorAll('#qcc-checkbox-group input[type="checkbox"]:checked');
+                const checkedQCCs = Array.from(selectedQccCheckboxes).map(cb => cb.value);
                 shipData.qccName = checkedQCCs.join(' & ');
                 
                 console.log('📦 Ship data prepared:', shipData);
@@ -1762,9 +2251,73 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfOptionBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const type = e.target.dataset.type; 
-                exportToPDF(type); 
+                const type = e.target.dataset.type || e.target.closest('.pdf-option-btn').dataset.type;
+                
+                // Tutup dropdown
+                pdfOptionsContainer.style.display = 'none';
+                
+                if (type === 'custom') {
+                    // Buka modal untuk custom date
+                    const customDateModal = document.getElementById('custom-date-modal');
+                    const pdfStartDate = document.getElementById('pdf-start-date');
+                    const pdfEndDate = document.getElementById('pdf-end-date');
+                    
+                    // Set default dates
+                    const today = new Date();
+                    const nextWeek = new Date(today);
+                    nextWeek.setDate(today.getDate() + 7);
+                    
+                    pdfStartDate.value = today.toISOString().split('T')[0];
+                    pdfEndDate.value = nextWeek.toISOString().split('T')[0];
+                    
+                    customDateModal.style.display = 'block';
+                } else {
+                    // Export langsung untuk tipe lain
+                    exportToPDF(type); 
+                }
             });
+        });
+
+        // Event listeners untuk Custom Date Modal
+        const customDateModal = document.getElementById('custom-date-modal');
+        const closeDateModal = document.getElementById('close-date-modal');
+        const cancelDatePdf = document.getElementById('cancel-date-pdf');
+        const confirmDatePdf = document.getElementById('confirm-date-pdf');
+
+        // Close modal handlers
+        if (closeDateModal) {
+            closeDateModal.addEventListener('click', () => {
+                customDateModal.style.display = 'none';
+            });
+        }
+
+        if (cancelDatePdf) {
+            cancelDatePdf.addEventListener('click', () => {
+                customDateModal.style.display = 'none';
+            });
+        }
+
+        // Confirm custom date PDF
+        if (confirmDatePdf) {
+            confirmDatePdf.addEventListener('click', () => {
+                const startDate = document.getElementById('pdf-start-date').value;
+                const endDate = document.getElementById('pdf-end-date').value;
+                
+                if (!startDate || !endDate) {
+                    alert('❌ Silakan pilih tanggal mulai dan tanggal selesai!');
+                    return;
+                }
+                
+                customDateModal.style.display = 'none';
+                exportToPDF('custom', startDate, endDate);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === customDateModal) {
+                customDateModal.style.display = 'none';
+            }
         });
 
         let activeDraggableLine = null;

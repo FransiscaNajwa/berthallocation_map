@@ -51,18 +51,48 @@
                 <button id="add-ship-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Kapal</button>
                 <button id="add-maintenance-btn" class="btn btn-info"><i class="fas fa-wrench"></i> Maintenance</button>
                 <button id="add-rest-btn" class="btn btn-dark"><i class="fas fa-coffee"></i> Break</button>
+                <button id="master-ships-btn" class="btn btn-master"><i class="fas fa-ship"></i> Master Kapal</button>
 
                 <div class="pdf-dropdown-container">
                     <button id="export-pdf-btn" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</button>
                     <div id="pdf-options" class="pdf-options" style="display: none;">
-                        <button class="pdf-option-btn" data-type="weekly">Mingguan</button>
-                        <button class="pdf-option-btn" data-type="daily">Harian (Hari Ini & Besok)</button>
+                        <button class="pdf-option-btn" data-type="1-2days"><i class="fas fa-calendar-day"></i> 1-2 Hari</button>
+                        <button class="pdf-option-btn" data-type="weekly"><i class="fas fa-calendar-week"></i> Mingguan</button>
+                        <button class="pdf-option-btn" data-type="monthly"><i class="fas fa-calendar-alt"></i> Bulanan</button>
+                        <button class="pdf-option-btn" data-type="custom"><i class="fas fa-calendar-check"></i> Pilih Tanggal</button>
                     </div>
                 </div>
 
                 <button id="clear-data-btn" class="btn btn-warning" title="Hapus Semua Data"><i class="fas fa-trash-alt"></i></button>
             </div>
         </header>
+
+        <!-- Modal Custom Date Range PDF -->
+        <div id="custom-date-modal" class="modal" style="display: none;">
+            <div class="modal-content pdf-date-modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Pilih Rentang Tanggal PDF</h2>
+                    <button class="close-modal" id="close-date-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="pdf-start-date"><i class="fas fa-calendar-day"></i> Tanggal Mulai:</label>
+                        <input type="date" id="pdf-start-date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="pdf-end-date"><i class="fas fa-calendar-day"></i> Tanggal Selesai:</label>
+                        <input type="date" id="pdf-end-date" class="form-control">
+                    </div>
+                    <div class="date-info">
+                        <i class="fas fa-info-circle"></i> Pilih rentang tanggal yang ingin di-export ke PDF
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel-date-pdf" class="btn btn-secondary"><i class="fas fa-times"></i> Batal</button>
+                    <button id="confirm-date-pdf" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                </div>
+            </div>
+        </div>
 
         <div id="berth-map-container" class="berth-map-container">
             <div class="y-axis-column">
@@ -134,72 +164,25 @@
                  </div>
                  <div class="communication-log-container">
                      <h2>Communication Log</h2>
-                     <table id="comm-log-table">
-                         <thead>
-                             <tr>
-                                 <th>No.</th>
-                                 <th>Date - Time</th>
-                                 <th>Petugas</th>
-                                 <th>Stakeholder</th>
-                                 <th>PIC</th>
-                                 <th>Remark</th>
-                                 <th>Comm Channel</th>
-                                 <th>Hapus</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-                             <tr>
-                                 <td>1</td>
-                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true">WAG</td>
-                                 <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
-                             </tr>
-                              <tr>
-                                 <td>2</td>
-                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true">WAG</td>
-                                 <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
-                             </tr>
-                             <tr>
-                                 <td>3</td>
-                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true">WAG</td>
-                                 <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
-                             </tr>
-                             <tr>
-                                 <td>4</td>
-                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true">WAG</td>
-                                 <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
-                             </tr>
-                             <tr>
-                                 <td>5</td>
-                                 <td><input type="datetime-local" class="comm-datetime-input"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true"></td>
-                                 <td contenteditable="true">WAG</td>
-                                 <td style="text-align: center;"><button type="button" class="btn-delete-row" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
-                             </tr>
-                         </tbody>
-                     </table>
+                     <div class="comm-log-table-wrapper">
+                         <table id="comm-log-table">
+                             <thead>
+                                 <tr>
+                                     <th>No.</th>
+                                     <th>Date - Time</th>
+                                     <th>Petugas</th>
+                                     <th>Stakeholder</th>
+                                     <th>PIC</th>
+                                     <th>Remark</th>
+                                     <th>Comm Channel</th>
+                                     <th>Hapus</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <!-- Rows akan ditambahkan secara dinamis oleh JavaScript -->
+                             </tbody>
+                         </table>
+                     </div>
                      <div style="margin-top: 15px; display: flex; gap: 10px;">
                          <button id="save-comm-log-btn" class="btn btn-primary" style="padding: 10px 20px;">
                              <i class="fas fa-save"></i> Simpan Communication Log
@@ -219,37 +202,39 @@
                 <form id="ship-form">
                     <div class="form-group">
                         <label for="ship-company">Pelayaran:</label>
-                        <select id="ship-company" name="company" required>
-                            <option value="" disabled selected>-- Pilih Pelayaran --</option>
-                            <option value="SPIL">SPIL</option>
-                            <option value="CTP">CTP</option>
-                            <option value="MERATUS">MERATUS</option>
-                            <option value="TANTO">TANTO</option>
-                            <option value="PPNP">PPNP</option>
-                            <option value="ICON">ICON</option>
-                            <option value="LINE">TEMAS LINE</option>
-                            <option value="LAIN - LAIN">LAIN - LAIN</option>
-                        </select>
+                        <input type="text" id="ship-company" name="company" placeholder="Akan terisi otomatis dari master data" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
                         <label for="ship-name">Nama Kapal:</label>
-                        <input type="text" id="ship-name" name="shipName" placeholder="Contoh: KATINGAN" required>
+                        <input type="text" id="ship-name" name="shipName" placeholder="Contoh: KATINGAN" required list="ship-name-suggestions">
+                        <datalist id="ship-name-suggestions">
+                            <!-- Akan diisi oleh JavaScript dari master_ships -->
+                        </datalist>
+                        <small style="color: #666; font-size: 0.85em;">Ketik nama kapal atau pilih dari master data</small>
                     </div>
-                    <div class="form-group form-group-full">
-                        <label for="ship-code">Kode Kapal/Voyage/Tahun/Window:</label>
-                        <input type="text" id="ship-code" name="code" placeholder="Contoh: MKT / 221 / 25 / ON" required>
+                    <div class="form-group">
+                        <label for="ship-code">Kode Kapal:</label>
+                        <input type="text" id="ship-code" name="code" placeholder="Akan terisi otomatis dari master data" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-voyage">Voyage:</label>
+                        <input type="text" id="ship-voyage" name="voyage" placeholder="Isi Voyage" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ship-ws-code">Kode WS:</label>
+                        <input type="text" id="ship-ws-code" name="wsCode" placeholder="Isi Kode WS" required>
                     </div>
                     <div class="form-group">
                         <label for="ship-length">Panjang Kapal (LOA):</label>
-                        <input type="number" id="ship-length" step="0.1" name="length" placeholder="Contoh: 100" required>
+                        <input type="number" id="ship-length" step="0.1" name="length" placeholder="Akan terisi otomatis" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
                         <label for="ship-draft">Draft Kapal (meter):</label>
-                        <input type="number" step="0.1" id="ship-draft" name="draft" placeholder="Contoh: 8.5" required>
+                        <input type="number" step="0.1" id="ship-draft" name="draft" placeholder="Akan terisi otomatis" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                     </div>
                     <div class="form-group form-group-full">
                         <label for="dest-port">Destination Port / Next Port:</label>
-                        <input type="text" id="dest-port" name="destPort" placeholder="Contoh: IDSUB / " required>
+                        <input type="text" id="dest-port" name="destPort" placeholder="Akan terisi otomatis dari master data" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
                         <label for="start-kd">Start KD:</label>
@@ -263,7 +248,7 @@
                     </div>
                     <div class="form-group">
                         <label for="ship-bsh">BSH:</label>
-                        <input type="number" id="ship-bsh" name="bsh" placeholder="Ex: 38">
+                        <input type="number" id="ship-bsh" name="bsh" placeholder="Ex: 38" required>
                     </div>
                     <div class="form-group">
                         <label for="eta-time">Waktu Tiba (ETA):</label>
@@ -279,15 +264,15 @@
                     </div>
                     <div class="form-group">
                         <label for="end-time">Waktu Berangkat (ETD):</label>
-                        <input type="datetime-local" id="end-time" name="endTime" readonly>
+                        <input type="datetime-local" id="end-time" name="endTime" placeholder="Otomatis atau isi manual">
                     </div>
                     <div class="form-group">
                         <label for="discharge-value">Discharge:</label>
-                        <input type="number" id="discharge-value" name="dischargeValue" value="0">
+                        <input type="number" id="discharge-value" name="dischargeValue" value="0" required>
                     </div>
                     <div class="form-group">
                         <label for="load-value">Loading:</label>
-                        <input type="number" id="load-value" name="loadValue" value="0">
+                        <input type="number" id="load-value" name="loadValue" value="0" required>
                     </div>
                     <div class="form-group">
                         <label for="ship-status">Status Kapal:</label>
@@ -301,7 +286,8 @@
                     </div>
                     <div class="form-group">
                         <label for="ship-berth-side">Berth Side:</label>
-                        <select id="ship-berth-side" name="berthSide">
+                        <select id="ship-berth-side" name="berthSide" required>
+                            <option value="">-- Pilih --</option>
                             <option value="P">P (Port)</option>
                             <option value="S">S (Starboard)</option>
                         </select>
@@ -332,6 +318,123 @@
                         <button type="button" id="delete-ship-btn" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Hapus</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Master Ships Modal -->
+        <div id="master-ships-modal" class="modal">
+            <div class="modal-content" style="max-width: 1200px;">
+                <span class="close-btn" id="close-master-ships-modal">&times;</span>
+                <h2>Master Data Kapal</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <button id="add-new-master-ship-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Tambah Kapal Baru
+                    </button>
+                </div>
+
+                <!-- Table untuk list master ships -->
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table id="master-ships-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 10px; border: 1px solid #ddd;">No</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Nama Kapal</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Pelayaran</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Kode Kapal</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Panjang (m)</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Draft (m)</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Form untuk add/edit master ship -->
+                <div id="master-ship-form-container" style="display: none; background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3 id="master-ship-form-title">Tambah Data Kapal</h3>
+                    <form id="master-ship-form">
+                        <input type="hidden" id="master-ship-id" name="id">
+                        
+                        <!-- Grid untuk form -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <!-- Row 1: Nama Kapal & Pelayaran -->
+                            <div class="form-group">
+                                <label for="master-ship-name">Nama Kapal: *</label>
+                                <input type="text" id="master-ship-name" name="ship_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="master-shipping-line">Pelayaran:</label>
+                                <select id="master-shipping-line" name="shipping_line">
+                                    <option value="">-- Pilih Pelayaran --</option>
+                                    <option value="SPIL">SPIL</option>
+                                    <option value="CTP">CTP</option>
+                                    <option value="MERATUS">MERATUS</option>
+                                    <option value="TANTO">TANTO</option>
+                                    <option value="PPNP">PPNP</option>
+                                    <option value="ICON">ICON</option>
+                                    <option value="TEMAS LINE">TEMAS LINE</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Row 2: Kode Kapal & Tahun -->
+                            <div class="form-group">
+                                <label for="master-ship-code">Kode Kapal:</label>
+                                <input type="text" id="master-ship-code" name="ship_code">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="master-year">Tahun:</label>
+                                <input type="text" id="master-year" name="year">
+                            </div>
+                            
+                            <!-- Row 3: Window -->
+                            <div class="form-group" style="grid-column: 1;">
+                                <label for="master-window">Window:</label>
+                                <input type="text" id="master-window" name="window">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 4: Panjang Kapal & Draft Kapal (1 baris) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                            <div class="form-group">
+                                <label for="master-length">Panjang Kapal (meter):</label>
+                                <input type="number" id="master-length" name="length" step="0.01">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="master-draft">Draft Kapal (meter):</label>
+                                <input type="number" id="master-draft" name="draft" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <!-- Row 5: Destination Port & Next Port (1 baris) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                            <div class="form-group">
+                                <label for="master-destination-port">Destination Port:</label>
+                                <input type="text" id="master-destination-port" name="destination_port">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="master-next-port">Next Port:</label>
+                                <input type="text" id="master-next-port" name="next_port">
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <button type="button" id="cancel-master-ship-form" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 

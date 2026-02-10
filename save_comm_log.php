@@ -13,7 +13,16 @@ if (!$data || !is_array($data)) {
 }
 
 try {
-    // Insert atau update data (tidak menghapus semua data lama)
+    // Hapus semua data lama terlebih dahulu untuk menghindari duplikasi
+    $deleteStmt = $conn->query("DELETE FROM communication_logs");
+    if (!$deleteStmt) {
+        error_log("Delete failed: " . $conn->error);
+        echo json_encode(["status" => "error", "message" => "Delete failed: " . $conn->error]);
+        exit;
+    }
+    error_log("Old communication logs deleted");
+
+    // Insert data baru
     $stmt = $conn->prepare("INSERT INTO communication_logs (dateTime, petugas, stakeholder, pic, remark, commChannel) 
                            VALUES (?, ?, ?, ?, ?, ?)");
 
@@ -25,9 +34,10 @@ try {
 
     $insertCount = 0;
     foreach ($data as $row) {
-        // Skip empty rows
+        // Skip empty rows - hanya simpan yang ada isinya
         if (empty($row['dateTime']) && empty($row['petugas']) && empty($row['stakeholder']) && 
             empty($row['pic']) && empty($row['remark'])) {
+            error_log("Skipping empty row");
             continue;
         }
 

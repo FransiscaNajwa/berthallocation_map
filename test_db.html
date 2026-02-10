@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Koneksi Database - BA Map App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .test-item {
+            background: #f8f9fa;
+            border-left: 5px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .test-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-item.failed {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-badge.success {
+            background: #28a745;
+            color: white;
+        }
+        .status-badge.failed {
+            background: #dc3545;
+            color: white;
+        }
+        .test-message {
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+        .test-detail {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .test-info {
+            background: #e7f3ff;
+            border-left: 5px solid #2196F3;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .timestamp {
+            text-align: center;
+            color: #999;
+            margin-top: 30px;
+            font-size: 12px;
+        }
+        .btn-refresh {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-refresh:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .summary-number.success { color: #28a745; }
+        .summary-number.failed { color: #dc3545; }
+        .summary-label {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Koneksi Database</h1>
+        <p class="subtitle">Berth Allocation Map Application</p>
+        
+        <div id="results" class="loading">
+            <div class="spinner"></div>
+            <p>Memeriksa koneksi database...</p>
+        </div>
+        
+        <button class="btn-refresh" onclick="location.reload()">🔄 Refresh Test</button>
+    </div>
+
+    <script>
+        async function testConnection() {
+            try {
+                const response = await fetch('test_connection.php');
+                const data = await response.json();
+                
+                displayResults(data);
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="test-item failed">
+                        <div class="test-title">
+                            <span class="status-badge failed">GAGAL</span>
+                            Tidak bisa terhubung ke server
+                        </div>
+                        <div class="test-message">Error: ${error.message}</div>
+                        <div class="test-detail">
+                            Pastikan:
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>XAMPP/WAMP sudah berjalan</li>
+                                <li>Apache web server sudah aktif</li>
+                                <li>File berada di folder htdocs</li>
+                                <li>URL sudah benar (http://localhost/ba_map_app/test_db.html)</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayResults(data) {
+            const tests = data.tests;
+            let successCount = 0;
+            let failedCount = 0;
+            
+            // Hitung success dan failed
+            Object.values(tests).forEach(test => {
+                if (test.status === 'BERHASIL') successCount++;
+                if (test.status === 'GAGAL') failedCount++;
+            });
+            
+            let html = `
+                <div class="summary">
+                    <div class="summary-item">
+                        <div class="summary-number success">${successCount}</div>
+                        <div class="summary-label">Berhasil</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-number failed">${failedCount}</div>
+                        <div class="summary-label">Gagal</div>
+                    </div>
+                </div>
+            `;
+            
+            // Database Test
+            if (tests.database) {
+                const status = tests.database.status === 'BERHASIL' ? 'success' : 'failed';
+                html += `
+                    <div class="test-item ${status}">
+                        <div class="test-title">
+                            <span class="status-badge ${status}">${tests.database.status}</span>
+                            📊 Koneksi Database
+                        </div>
+                        <div class="test-message">${tests.database.message}</div>
+                        ${tests.database.detail ? `<div class="test-detail">💡 ${tests.database.detail}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            // Table ship_schedules
+            if (tests.table_ship_schedules) {
+                const status = tests.table_ship_schedules.status === 'BERHASIL' ? 'success' : 'failed';
+                html += `
+                    <div class="test-item ${status}">
+                        <div class="test-title">
+                            <span class="status-badge ${status}">${tests.table_ship_schedules.status}</span>
+                            🚢 Tabel Ship Schedules
+                        </div>
+                        <div class="test-message">${tests.table_ship_schedules.message}</div>
+                        ${tests.table_ship_schedules.jumlah_data !== undefined ? 
+                            `<div class="test-info">📈 Jumlah data kapal: <strong>${tests.table_ship_schedules.jumlah_data}</strong> records</div>` : ''}
+                        ${tests.table_ship_schedules.detail ? `<div class="test-detail">💡 ${tests.table_ship_schedules.detail}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            // Table shipping_companies
+            if (tests.table_shipping_companies) {
+                const status = tests.table_shipping_companies.status === 'BERHASIL' ? 'success' : 'failed';
+                html += `
+                    <div class="test-item ${status}">
+                        <div class="test-title">
+                            <span class="status-badge ${status}">${tests.table_shipping_companies.status}</span>
+                            🏢 Tabel Shipping Companies
+                        </div>
+                        <div class="test-message">${tests.table_shipping_companies.message}</div>
+                        ${tests.table_shipping_companies.jumlah_data !== undefined ? 
+                            `<div class="test-info">📈 Jumlah perusahaan: <strong>${tests.table_shipping_companies.jumlah_data}</strong> companies</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            // PHP Test
+            if (tests.php) {
+                const status = tests.php.status === 'BERHASIL' ? 'success' : 'failed';
+                html += `
+                    <div class="test-item ${status}">
+                        <div class="test-title">
+                            <span class="status-badge ${status}">${tests.php.status}</span>
+                            🐘 PHP Server
+                        </div>
+                        <div class="test-message">${tests.php.message}</div>
+                        <div class="test-info">Version: <strong>PHP ${tests.php.version}</strong></div>
+                    </div>
+                `;
+            }
+            
+            // MySQLi Extension
+            if (tests.mysqli_extension) {
+                const status = tests.mysqli_extension.status === 'BERHASIL' ? 'success' : 'failed';
+                html += `
+                    <div class="test-item ${status}">
+                        <div class="test-title">
+                            <span class="status-badge ${status}">${tests.mysqli_extension.status}</span>
+                            🔌 MySQLi Extension
+                        </div>
+                        <div class="test-message">${tests.mysqli_extension.message}</div>
+                    </div>
+                `;
+            }
+            
+            html += `<div class="timestamp">⏰ Waktu test: ${data.timestamp}</div>`;
+            
+            document.getElementById('results').innerHTML = html;
+        }
+
+        // Run test on load
+        testConnection();
+    </script>
+</body>
+</html>

@@ -143,6 +143,7 @@ CREATE TABLE `ship_schedules` (
   `company` varchar(100) DEFAULT NULL,
   `shipName` varchar(255) DEFAULT NULL,
   `code` varchar(100) DEFAULT NULL,
+  `voyage` varchar(100) DEFAULT NULL,
   `length` int(11) DEFAULT NULL,
   `draft` float DEFAULT NULL,
   `destPort` varchar(100) DEFAULT NULL,

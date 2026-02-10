@@ -76,6 +76,28 @@ h2#report-subtitle {
 .btn-warning { background-color: #ffc107; color: #212529; }
 .btn-info { background-color: #17a2b8; color: white; }
 .btn-dark { background-color: #343a40; color: white; }
+.btn-success { background-color: #28a745; color: white; }
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-master { 
+    background-color: white; 
+    color: #1a1a1a; 
+    border: 2.5px solid #1a1a1a;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+.btn-master:hover { 
+    background-color: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    opacity: 1;
+    transform: translateY(-2px);
+}
+.btn-master:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
 
 
 .berth-map-container {
@@ -329,12 +351,12 @@ h2#report-subtitle {
     position: absolute;
     top: 2px;
     right: 3px;
-    height: 20px;
+    height: 35px;
     width: auto;
     object-fit: contain;
-    background-color: rgba(255,255,255,0.7);
-    padding: 2px;
-    border-radius: 3px;
+    background-color: rgba(255,255,255,0.8);
+    padding: 3px;
+    border-radius: 4px;
 }
 
 /* .ship-body {
@@ -522,6 +544,11 @@ h2#report-subtitle {
     color: #000000;
     font-weight: bold;
 }
+.ship-sub-title .ship-meta-line {
+    display: block;
+    font-size: 0.9em;
+    font-weight: normal;
+}
 
 .legends-scroll-container {
     overflow-x: auto;
@@ -652,13 +679,16 @@ h2#report-subtitle {
 }
 
 .communication-log-container {
-    flex-basis: 450px;
-    min-width: 400px;
+    flex-basis: 520px;
+    min-width: 500px;
+    max-width: 520px;
     border: 1px solid #ccc;
     background-color: #fdfdfd;
     padding: 10px;
     font-family: Arial, sans-serif;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 }
 .communication-log-container h2 {
     font-size: 1.5em;
@@ -667,22 +697,97 @@ h2#report-subtitle {
     font-weight: bold;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* Wrapper untuk tabel dengan scroll */
+.comm-log-table-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #ccc;
+    position: relative;
+    display: block;
+}
+
+/* Scrollbar styling untuk wrapper */
+.comm-log-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.comm-log-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.comm-log-table-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.comm-log-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
 #comm-log-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    table-layout: auto;
 }
 #comm-log-table th,
 #comm-log-table td {
     border: 1px solid #000;
-    padding: 6px 4px;
+    padding: 4px 3px;
     text-align: left;
     vertical-align: top;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 #comm-log-table th {
     background-color: #4472C4;
     color: white;
     font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-size: 0.95em;
+}
+
+/* Kolom widths yang proporsional */
+#comm-log-table th:nth-child(1),
+#comm-log-table td:nth-child(1) {
+    width: 30px;
+    text-align: center;
+}
+#comm-log-table td:nth-child(1) {
+    background-color: #f0f0f0;
+}
+#comm-log-table th:nth-child(2),
+#comm-log-table td:nth-child(2) {
+    min-width: 130px;
+}
+#comm-log-table th:nth-child(3),
+#comm-log-table td:nth-child(3) {
+    min-width: 80px;
+}
+#comm-log-table th:nth-child(4),
+#comm-log-table td:nth-child(4) {
+    min-width: 80px;
+}
+#comm-log-table th:nth-child(5),
+#comm-log-table td:nth-child(5) {
+    min-width: 70px;
+}
+#comm-log-table th:nth-child(6),
+#comm-log-table td:nth-child(6) {
+    min-width: 100px;
+}
+#comm-log-table th:nth-child(7),
+#comm-log-table td:nth-child(7) {
+    min-width: 80px;
+}
+#comm-log-table th:nth-child(8),
+#comm-log-table td:nth-child(8) {
+    width: 50px;
+    text-align: center;
 }
 #comm-log-table td { background-color: #fff; }
 #comm-log-table td[contenteditable="true"] {
@@ -691,25 +796,16 @@ h2#report-subtitle {
 }
 #comm-log-table .comm-datetime-input {
     width: 100%;
-    padding: 4px 2px;
+    padding: 2px;
     border: none;
     background-color: #ffffff;
-    font-size: 0.9em;
+    font-size: 1em;
     font-family: Arial, sans-serif;
     cursor: pointer;
 }
 #comm-log-table .comm-datetime-input:focus {
     outline: 2px solid #4472C4;
     background-color: #f0f8ff;
-}
-#comm-log-table th:first-child {
-    text-align: center;
-    width: 10px;
-}
-#comm-log-table td:first-child {
-    text-align: center;
-    width: 10px;
-    background-color: #f0f0f0;
 }
 
 .maintenance-block {
@@ -800,7 +896,7 @@ h2#report-subtitle {
     display: none;
     position: absolute;
     background-color: #f9f9f9;
-    min-width: 180px;
+    min-width: 200px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 101;
     right: 0;
@@ -809,18 +905,26 @@ h2#report-subtitle {
 }
 .pdf-option-btn {
     color: black;
-    padding: 10px 15px;
+    padding: 12px 15px;
     text-decoration: none;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     text-align: left;
     background-color: transparent;
     border: none;
     cursor: pointer;
     font-size: 0.9em;
+    transition: background-color 0.2s;
 }
 .pdf-option-btn:hover {
-    background-color: #ddd;
+    background-color: #007bff;
+    color: white;
+}
+.pdf-option-btn i {
+    width: 16px;
+    text-align: center;
 }
 
 .hide-for-pdf {
@@ -926,4 +1030,147 @@ h2#report-subtitle {
     height: 0;
     border-top: 3px dashed;
     opacity: 0.9;
+}
+
+/* ==================== MODAL STYLES ==================== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s;
+    position: relative;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.pdf-date-modal {
+    width: 90%;
+    max-width: 500px;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.4em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-modal:hover {
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group label i {
+    color: #667eea;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.date-info {
+    background: #e7f3ff;
+    border-left: 4px solid #2196F3;
+    padding: 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #0056b3;
+}
+
+.date-info i {
+    color: #2196F3;
+}
+
+.modal-footer {
+    padding: 15px 25px;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }

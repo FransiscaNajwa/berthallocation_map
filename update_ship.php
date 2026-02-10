@@ -14,6 +14,8 @@ $id = $data['id'];
 $shipName = $data['shipName'] ?? null;
 $company = $data['company'] ?? null;
 $code = $data['code'] ?? null;
+$voyage = $data['voyage'] ?? null;
+$wsCode = $data['wsCode'] ?? null;
 $length = $data['length'] ?? null;
 $draft = $data['draft'] ?? null;
 $destPort = $data['destPort'] ?? null;
@@ -74,7 +76,7 @@ if ($bsh === '' || $bsh === null || $bsh === 'null') {
 }
 
 $sql = "UPDATE ship_schedules SET
-            shipName = ?, company = ?, code = ?, length = ?, draft = ?, destPort = ?,
+            shipName = ?, company = ?, code = ?, voyage = ?, wsCode = ?, length = ?, draft = ?, destPort = ?,
             startKd = ?, nKd = ?, minKd = ?, loadValue = ?, dischargeValue = ?,
             etaTime = ?, startTime = ?, etcTime = ?, endTime = ?, status = ?,
             berthSide = ?, bsh = ?, qccName = ?, shipping_company_id = ?
@@ -87,12 +89,14 @@ if (!$stmt) {
     exit;
 }
 
-error_log("Binding parameters. Type string: sssidsiiiiissssssisii");
+error_log("Binding parameters. Type string: ssssidsiiiiissssssisii");
 $stmt->bind_param(
-    "sssidsiiiiissssssisii",
+    "sssssidsiiiiissssssisii",
     $shipName,
     $company,
     $code,
+    $voyage,
+    $wsCode,
     $length,
     $draft,
     $destPort,

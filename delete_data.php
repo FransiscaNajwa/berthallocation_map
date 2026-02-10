@@ -12,7 +12,8 @@ $tableMap = [
     'ship' => 'ship_schedules',
     'maintenance' => 'maintenance_schedules',
     'rest' => 'rest_schedules',
-    'communication' => 'communication_logs'
+    'communication' => 'communication_logs',
+    'master_ship' => 'master_ships'
 ];
 
 error_log("Received parameters: ID = $id, Type = $type");
@@ -36,6 +37,27 @@ if ($id > 0 && array_key_exists($type, $tableMap)) {
         error_log("Data dengan ID: $id tidak ditemukan di tabel: $tableName");
         echo json_encode(["status" => "error", "message" => "Data not found"]);
         exit;
+    }
+
+    // Jika menghapus jadwal kapal, hapus juga data maintenance dan break terkait
+    if ($type === 'ship') {
+        error_log("Deleting related maintenance and rest schedules for ship_id: $id");
+        
+        // Hapus maintenance schedules
+        $deleteMaintenance = $conn->prepare("DELETE FROM maintenance_schedules WHERE ship_id = ?");
+        $deleteMaintenance->bind_param("i", $id);
+        $deleteMaintenance->execute();
+        $maintenanceDeleted = $deleteMaintenance->affected_rows;
+        $deleteMaintenance->close();
+        error_log("Deleted $maintenanceDeleted maintenance schedule(s)");
+        
+        // Hapus rest schedules
+        $deleteRest = $conn->prepare("DELETE FROM rest_schedules WHERE ship_id = ?");
+        $deleteRest->bind_param("i", $id);
+        $deleteRest->execute();
+        $restDeleted = $deleteRest->affected_rows;
+        $deleteRest->close();
+        error_log("Deleted $restDeleted rest schedule(s)");
     }
 
     $stmt = $conn->prepare("DELETE FROM $tableName WHERE id = ?");

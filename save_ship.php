@@ -31,7 +31,7 @@ if (!$conn) {
 }
 
 // Validasi required fields dengan cara yang lebih efisien
-$requiredFields = ['shipName', 'company', 'code', 'length', 'draft', 'destPort', 'startKd', 
+$requiredFields = ['shipName', 'company', 'code', 'voyage', 'length', 'draft', 'destPort', 'startKd', 
                    'nKd', 'minKd', 'loadValue', 'dischargeValue', 'etaTime', 'startTime', 
                    'etcTime', 'endTime', 'status', 'berthSide', 'bsh', 'qccName'];
 
@@ -47,6 +47,8 @@ foreach ($requiredFields as $field) {
 $shipName = $data['shipName'] ?? null;
 $company = $data['company'] ?? null;
 $code = $data['code'] ?? null;
+$voyage = $data['voyage'] ?? null;
+$wsCode = $data['wsCode'] ?? null;
 $length = $data['length'] ?? null;
 $draft = $data['draft'] ?? null;
 $destPort = $data['destPort'] ?? null;
@@ -114,10 +116,10 @@ error_log("Type casting done. length=" . $length . "(int), draft=" . $draft . "(
 
 // Query untuk menyisipkan data (dengan startKd dan shipping_company_id)
 $sql = "INSERT INTO ship_schedules (
-            shipName, company, code, length, draft, destPort, startKd, nKd, minKd,
+            shipName, company, code, voyage, wsCode, length, draft, destPort, startKd, nKd, minKd,
             loadValue, dischargeValue, etaTime, startTime, etcTime, endTime, status,
             berthSide, bsh, qccName, shipping_company_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";;
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -134,10 +136,12 @@ if ($bsh === '' || $bsh === null || $bsh === 'null') {
 }
 
 $stmt->bind_param(
-    "sssidsiiiiissssssisi",
+    "sssssidsiiiiissssssisi",
     $shipName,
     $company,
     $code,
+    $voyage,
+    $wsCode,
     $length,
     $draft,
     $destPort,
