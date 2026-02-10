@@ -13,11 +13,7 @@ if (!$data || !is_array($data)) {
 }
 
 try {
-    // Delete semua data lama terlebih dahulu
-    $deleteResult = $conn->query("DELETE FROM communication_logs");
-    error_log("Delete result: " . ($deleteResult ? "SUCCESS" : "FAILED"));
-
-    // Insert data baru
+    // Insert atau update data (tidak menghapus semua data lama)
     $stmt = $conn->prepare("INSERT INTO communication_logs (dateTime, petugas, stakeholder, pic, remark, commChannel) 
                            VALUES (?, ?, ?, ?, ?, ?)");
 

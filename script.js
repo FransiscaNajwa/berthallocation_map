@@ -507,6 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
             rows.forEach((row, index) => {
                 if (!data[index]) return;
 
+                // Store the ID in data attribute for deletion
+                row.setAttribute('data-id', data[index].id);
+
                 // Set datetime input
                 const datetimeInput = row.querySelector('input[type="datetime-local"]');
                 if (datetimeInput && data[index].dateTime) {
@@ -534,6 +537,58 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('❌ Error loading communication log:', error);
         }
+    }
+
+    function setupCommLogDeleteButtons() {
+        const table = document.getElementById('comm-log-table');
+        const deleteButtons = table.querySelectorAll('.btn-delete-row');
+
+        deleteButtons.forEach((btn, index) => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('tr');
+                const rowId = row.getAttribute('data-id');
+
+                if (confirm('Anda yakin ingin menghapus baris komunikasi log ini?')) {
+                    try {
+                        // Delete dari database jika ada ID
+                        if (rowId) {
+                            const deleteResponse = await fetch(`delete_data.php?id=${rowId}&type=communication`);
+                            const deleteResult = await deleteResponse.json();
+                            
+                            if (deleteResult.status !== 'success') {
+                                alert('❌ Gagal menghapus dari database: ' + deleteResult.message);
+                                return;
+                            }
+                            console.log('✅ Row deleted from database, ID:', rowId);
+                        }
+
+                        // Clear the row in UI
+                        const datetimeInput = row.querySelector('input[type="datetime-local"]');
+                        if (datetimeInput) {
+                            datetimeInput.value = '';
+                        }
+
+                        const contentEditableCells = row.querySelectorAll('td[contenteditable="true"]');
+                        contentEditableCells.forEach((cell, idx) => {
+                            if (idx < contentEditableCells.length - 1) {
+                                cell.textContent = '';
+                            } else {
+                                cell.textContent = 'WAG';
+                            }
+                        });
+
+                        // Remove data-id attribute since we cleared the row
+                        row.removeAttribute('data-id');
+                        
+                        console.log('🗑️ Row', index + 1, 'deleted and cleared');
+                        alert('✅ Baris komunikasi log berhasil dihapus!');
+                    } catch (error) {
+                        console.error('❌ Error deleting row:', error);
+                        alert('❌ Error: ' + error.message);
+                    }
+                }
+            });
+        });
     }
 
      function savePendingForm() {
@@ -1246,6 +1301,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        // Setup delete row buttons for communication log
+        setupCommLogDeleteButtons();
         
         prevWeekBtn.addEventListener('click', () => { currentStartDate.setDate(currentStartDate.getDate() - 7); updateDisplay(); });
         nextWeekBtn.addEventListener('click', () => { currentStartDate.setDate(currentStartDate.getDate() + 7); updateDisplay(); });

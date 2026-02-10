@@ -11,7 +11,8 @@ $type = isset($_GET['type']) ? $_GET['type'] : '';
 $tableMap = [
     'ship' => 'ship_schedules',
     'maintenance' => 'maintenance_schedules',
-    'rest' => 'rest_schedules'
+    'rest' => 'rest_schedules',
+    'communication' => 'communication_logs'
 ];
 
 error_log("Received parameters: ID = $id, Type = $type");

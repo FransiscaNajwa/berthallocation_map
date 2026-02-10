@@ -410,3 +410,386 @@ Stack trace:
 [09-Feb-2026 10:45:10 Europe/Berlin] Delete result: SUCCESS
 [09-Feb-2026 10:45:10 Europe/Berlin] Successfully inserted 1 rows
 [09-Feb-2026 10:45:10 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:42:50 Europe/Berlin] PHP Warning:  mysqli::__construct(): Error while reading greeting packet. PID=5372 in C:\Users\HP\Documents\ba_map_app\db_config.php on line 8
+[10-Feb-2026 03:42:50 Europe/Berlin] PHP Fatal error:  Maximum execution time of 120 seconds exceeded in C:\Users\HP\Documents\ba_map_app\db_config.php on line 8
+[10-Feb-2026 03:42:54 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\Users\HP\Documents\ba_map_app\db_config.php:8
+Stack trace:
+#0 C:\Users\HP\Documents\ba_map_app\db_config.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'ba_map')
+#1 C:\Users\HP\Documents\ba_map_app\get_comm_log.php(3): include('C:\\Users\\HP\\Doc...')
+#2 {main}
+  thrown in C:\Users\HP\Documents\ba_map_app\db_config.php on line 8
+[10-Feb-2026 03:44:58 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:44:58 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"}]
+[10-Feb-2026 03:44:58 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:44:58 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"7","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift"},{"id":"8","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:44:58 Europe/Berlin] Communication logs fetched: [{"id":"22","dateTime":"2026-02-09 16:45:00","petugas":"coba","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"}]
+[10-Feb-2026 03:44:58 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:44:58 Europe/Berlin] Found 1 communication log entries
+[10-Feb-2026 03:44:58 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 03:46:36 Europe/Berlin] Payload mentah: {"company":"CTP","shipName":"Test Ship","code":"MKT/221/25/ON","length":100,"draft":8,"destPort":"IDSUB / IDSRI","startKd":400,"nKd":500,"minKd":450,"bsh":40,"etaTime":"2026-02-10T09:46","startTime":"2026-02-10T10:46","etcTime":"2026-02-11T10:46","endTime":"2026-02-11T11:46","dischargeValue":500,"loadValue":500,"status":"VESSEL ALONGSIDE","berthSide":"P","qcc-options":"QCC03","qccName":"QCC02 & QCC03"}
+[10-Feb-2026 03:46:36 Europe/Berlin] Shipping company ditemukan: ID = 2
+[10-Feb-2026 03:46:36 Europe/Berlin] Available QCC names: ["QCC01","QCC02","QCC03","QCC04"]
+[10-Feb-2026 03:46:36 Europe/Berlin] PHP Warning:  Undefined variable $berthLocation in C:\Users\HP\Documents\ba_map_app\save_ship.php on line 108
+[10-Feb-2026 03:46:36 Europe/Berlin] Type casting done. length=100(int), draft=8(float)
+[10-Feb-2026 03:46:36 Europe/Berlin] Data berhasil disimpan ke database
+[10-Feb-2026 03:46:36 Europe/Berlin] Data diterima: {"company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":100,"draft":8,"destPort":"IDSUB \/ IDSRI","startKd":400,"nKd":500,"minKd":450,"bsh":40,"etaTime":"2026-02-10T09:46","startTime":"2026-02-10T10:46","etcTime":"2026-02-11T10:46","endTime":"2026-02-11T11:46","dischargeValue":500,"loadValue":500,"status":"VESSEL ALONGSIDE","berthSide":"P","qcc-options":"QCC03","qccName":"QCC02 & QCC03"}
+[10-Feb-2026 03:47:39 Europe/Berlin] Data diterima: {"type":"no-vessel","startKd":330,"endKd":400,"startTime":"2026-02-10T11:47","endTime":"2026-02-10T12:47","keterangan":"coba\n"}
+[10-Feb-2026 03:47:39 Europe/Berlin] Data berhasil disimpan ke maintenance_schedules. ID: 14
+[10-Feb-2026 03:47:55 Europe/Berlin] Data diterima: {"type":"maintenance","startKd":330,"endKd":400,"startTime":"2026-02-10T11:47","endTime":"2026-02-10T12:47","keterangan":"coba\n"}
+[10-Feb-2026 03:47:55 Europe/Berlin] Data berhasil disimpan ke maintenance_schedules. ID: 15
+[10-Feb-2026 03:48:04 Europe/Berlin] Received parameters: ID = 0, Type = maintenance
+[10-Feb-2026 03:48:04 Europe/Berlin] Output buffering level: 1
+[10-Feb-2026 03:48:04 Europe/Berlin] Headers sent: No
+[10-Feb-2026 03:48:04 Europe/Berlin] Invalid parameters: ID = 0, Type = maintenance
+[10-Feb-2026 03:48:35 Europe/Berlin] Received parameters: ID = 0, Type = ship
+[10-Feb-2026 03:48:35 Europe/Berlin] Output buffering level: 1
+[10-Feb-2026 03:48:35 Europe/Berlin] Headers sent: No
+[10-Feb-2026 03:48:35 Europe/Berlin] Invalid parameters: ID = 0, Type = ship
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:46 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"c","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:46 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:46 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:46 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"co","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:46 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:46 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:46 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"cob","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:46 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:46 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:46 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"coba","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:46 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:46 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:46 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"coba1","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:46 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:46 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:46 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:48:48 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:48:48 Europe/Berlin] Received data: [{"dateTime":"2026-02-09 16:45:00","petugas":"coba1","stakeholder":"coba","pic":"coba","remark":"coba","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:48:48 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:48:48 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:48:48 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:03 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:03 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:03 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:03 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:03 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:12 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WA"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:12 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:12 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:12 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"W"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:12 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:12 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:12 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":""},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:12 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:12 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:12 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:16 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:16 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":""},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:16 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:16 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:16 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:19 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:19 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"W"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:19 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:19 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:19 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:19 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:19 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WA"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:19 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:19 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:19 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:20 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:20 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:20 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:20 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:20 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:49:21 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:49:21 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:49:21 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:49:21 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:49:21 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:51:46 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:51:46 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"},{"id":"14","company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-10 09:46:00","startTime":"2026-02-10 10:46:00","etcTime":"2026-02-11 10:46:00","endTime":"2026-02-11 11:46:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-10 09:46:36","shipping_company_id":"2"}]
+[10-Feb-2026 03:51:46 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"14","type":"no-vessel","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"15","type":"maintenance","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:51:46 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"7","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift"},{"id":"8","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:51:46 Europe/Berlin] Communication logs fetched: []
+[10-Feb-2026 03:51:46 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:51:46 Europe/Berlin] Found 0 communication log entries
+[10-Feb-2026 03:51:46 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 03:51:53 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:51:53 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:51:53 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:51:53 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:51:53 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:51:56 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"e","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:51:56 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:51:56 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:51:56 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"er","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:51:56 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:51:56 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:51:56 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:51:56 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:51:56 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:51:56 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:00 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"e","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:00 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:00 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:00 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"er","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:00 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:00 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:00 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"ere","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:00 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:00 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:00 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:00 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:00 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:00 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:01 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"e","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:01 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:01 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:01 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"er","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:01 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:01 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:01 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"ere","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:01 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:01 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:01 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"erer","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:01 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:01 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:01 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:02 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"erere","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:02 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:02 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:02 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"ererer","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:02 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:02 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:02 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:51:00","petugas":"1","stakeholder":"ere","pic":"erer","remark":"ererer","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:02 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:02 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:02 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:11 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:11 Europe/Berlin] Received data: [{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:11 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:11 Europe/Berlin] Successfully inserted 0 rows
+[10-Feb-2026 03:52:11 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:16 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:16 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"q","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:16 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:16 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:16 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:18 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:18 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:18 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:18 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:18 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:19 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:19 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:19 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:19 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:19 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:20 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"f","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:20 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:20 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:20 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fw","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:20 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:20 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:20 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:20 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:20 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:20 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:22 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"e","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:22 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:22 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:22 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ew","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:22 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:22 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:22 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewr","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:22 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:22 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:22 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewre","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrew","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewr","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewre","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrer","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerw","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:23 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:23 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:23 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:23 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"w","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"we","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"wer","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werw","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwe","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwer","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwere","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:24 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerew","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:24 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:24 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:24 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:25 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:25 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewr","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:25 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:25 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:25 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:25 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:25 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewre","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:25 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:25 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:25 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:26 Europe/Berlin] Save Comm Log - START
+[10-Feb-2026 03:52:26 Europe/Berlin] Received data: [{"dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewre","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"},{"dateTime":"","petugas":"","stakeholder":"","pic":"","remark":"","commChannel":"WAG"}]
+[10-Feb-2026 03:52:26 Europe/Berlin] Delete result: SUCCESS
+[10-Feb-2026 03:52:26 Europe/Berlin] Successfully inserted 1 rows
+[10-Feb-2026 03:52:26 Europe/Berlin] Save Comm Log - END
+[10-Feb-2026 03:52:29 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:52:29 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"},{"id":"14","company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-10 09:46:00","startTime":"2026-02-10 10:46:00","etcTime":"2026-02-11 10:46:00","endTime":"2026-02-11 11:46:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-10 09:46:36","shipping_company_id":"2"}]
+[10-Feb-2026 03:52:29 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"14","type":"no-vessel","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"15","type":"maintenance","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:52:29 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"7","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift"},{"id":"8","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:52:29 Europe/Berlin] Communication logs fetched: [{"id":"70","dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewre","commChannel":"WAG"}]
+[10-Feb-2026 03:52:29 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:52:29 Europe/Berlin] Found 1 communication log entries
+[10-Feb-2026 03:52:29 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 03:52:33 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:52:33 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"},{"id":"14","company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-10 09:46:00","startTime":"2026-02-10 10:46:00","etcTime":"2026-02-11 10:46:00","endTime":"2026-02-11 11:46:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-10 09:46:36","shipping_company_id":"2"}]
+[10-Feb-2026 03:52:33 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"14","type":"no-vessel","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"15","type":"maintenance","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:52:33 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"7","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift"},{"id":"8","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:52:33 Europe/Berlin] Communication logs fetched: [{"id":"70","dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewre","commChannel":"WAG"}]
+[10-Feb-2026 03:52:34 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:52:34 Europe/Berlin] Found 1 communication log entries
+[10-Feb-2026 03:52:34 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 03:54:19 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:54:19 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"},{"id":"14","company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-10 09:46:00","startTime":"2026-02-10 10:46:00","etcTime":"2026-02-11 10:46:00","endTime":"2026-02-11 11:46:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-10 09:46:36","shipping_company_id":"2"}]
+[10-Feb-2026 03:54:19 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"14","type":"no-vessel","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"15","type":"maintenance","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:54:19 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"7","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift"},{"id":"8","startTime":"2026-02-09 12:11:00","endTime":"2026-02-09 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:54:19 Europe/Berlin] Communication logs fetched: [{"id":"70","dateTime":"2026-02-10 09:52:00","petugas":"1","stakeholder":"fwe","pic":"ewrewrerwe","remark":"werwerewre","commChannel":"WAG"}]
+[10-Feb-2026 03:54:19 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:54:19 Europe/Berlin] Found 1 communication log entries
+[10-Feb-2026 03:54:19 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 03:54:23 Europe/Berlin] Received parameters: ID = 70, Type = communication
+[10-Feb-2026 03:54:23 Europe/Berlin] Output buffering level: 1
+[10-Feb-2026 03:54:23 Europe/Berlin] Headers sent: No
+[10-Feb-2026 03:54:23 Europe/Berlin] Executing query: DELETE FROM communication_logs WHERE id = 70
+[10-Feb-2026 03:54:23 Europe/Berlin] Data successfully deleted from table: communication_logs, ID: 70
+[10-Feb-2026 03:57:59 Europe/Berlin] Input data: {"startTime":"2026-02-10T12:11","endTime":"2026-02-10T14:13","keterangan":"istirahat shift 1","id":"8"}
+[10-Feb-2026 03:57:59 Europe/Berlin] UPDATE executed successfully for rest schedule ID: 8
+[10-Feb-2026 03:58:08 Europe/Berlin] Received parameters: ID = 7, Type = rest
+[10-Feb-2026 03:58:08 Europe/Berlin] Output buffering level: 1
+[10-Feb-2026 03:58:08 Europe/Berlin] Headers sent: No
+[10-Feb-2026 03:58:08 Europe/Berlin] Executing query: DELETE FROM rest_schedules WHERE id = 7
+[10-Feb-2026 03:58:08 Europe/Berlin] Data successfully deleted from table: rest_schedules, ID: 7
+[10-Feb-2026 03:58:13 Europe/Berlin] Fetching data from database...
+[10-Feb-2026 03:58:13 Europe/Berlin] Ship schedules fetched: [{"id":"8","company":"MERATUS","shipName":"ghjj","code":"srer","length":"100","draft":"5.6","destPort":"sub","startKd":null,"nKd":"560","minKd":"450","mean":null,"loadValue":"400","dischargeValue":"500","etaTime":"0000-00-00 00:00:00","startTime":"2026-02-07 12:51:00","etcTime":"2026-02-08 13:52:00","endTime":"2026-02-09 15:54:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"0","created_at":"2026-02-06 10:49:53","shipping_company_id":"3"},{"id":"11","company":"TANTO","shipName":"mbtg","code":"MKT\/221\/25\/ON","length":"100","draft":"5.6","destPort":"sub","startKd":"450","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-09 11:41:00","startTime":"2026-02-09 12:41:00","etcTime":"2026-02-09 22:41:00","endTime":"2026-02-09 23:41:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-09 12:03:07","shipping_company_id":"4"},{"id":"13","company":"SPIL","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"450","etaTime":"2026-02-09 15:45:00","startTime":"2026-02-09 16:45:00","etcTime":"2026-02-10 15:30:00","endTime":"2026-02-10 16:30:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC01 & QCC02","created_at":"2026-02-09 15:55:10","shipping_company_id":"1"},{"id":"14","company":"CTP","shipName":"Test Ship","code":"MKT\/221\/25\/ON","length":"100","draft":"8","destPort":"IDSUB \/ IDSRI","startKd":"400","nKd":"500","minKd":"450","mean":null,"loadValue":"500","dischargeValue":"500","etaTime":"2026-02-10 09:46:00","startTime":"2026-02-10 10:46:00","etcTime":"2026-02-11 10:46:00","endTime":"2026-02-11 11:46:00","status":"VESSEL ALONGSIDE","berthSide":"P","bsh":"40","qccName":"QCC02 & QCC03","created_at":"2026-02-10 09:46:36","shipping_company_id":"2"}]
+[10-Feb-2026 03:58:13 Europe/Berlin] Maintenance schedules fetched: [{"id":"10","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 22:52:00","keterangan":"perbaikan feeder"},{"id":"11","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 09:03:00","keterangan":"rtyui"},{"id":"12","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan feeder"},{"id":"13","type":"maintenance","startKd":"350","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-09 13:12:00","keterangan":"perbaikan "},{"id":"14","type":"no-vessel","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"15","type":"maintenance","startKd":"330","endKd":"400","startTime":"0000-00-00 00:00:00","endTime":"2026-02-10 12:47:00","keterangan":"coba\n"},{"id":"7","type":"maintenance","startKd":"350","endKd":"400","startTime":"2026-02-06 08:47:00","endTime":"2026-02-07 09:48:00","keterangan":"yy"},{"id":"8","type":"maintenance","startKd":"450","endKd":"500","startTime":"2026-02-06 11:38:00","endTime":"2026-02-07 14:41:00","keterangan":"thg"}]
+[10-Feb-2026 03:58:13 Europe/Berlin] Rest schedules fetched: [{"id":"4","startTime":"2026-02-06 11:17:00","endTime":"2026-02-06 12:19:00","keterangan":"sg"},{"id":"8","startTime":"2026-02-10 12:11:00","endTime":"2026-02-10 14:13:00","keterangan":"istirahat shift 1"}]
+[10-Feb-2026 03:58:13 Europe/Berlin] Communication logs fetched: []
+[10-Feb-2026 03:58:13 Europe/Berlin] Get Comm Log - START
+[10-Feb-2026 03:58:13 Europe/Berlin] Found 0 communication log entries
+[10-Feb-2026 03:58:13 Europe/Berlin] Get Comm Log - END
+[10-Feb-2026 04:05:47 Europe/Berlin] Input data: {"startTime":"2026-02-10T10:05","endTime":"2026-02-10T11:05","keterangan":"coba"}
+[10-Feb-2026 04:05:47 Europe/Berlin] INSERT executed successfully. New rest schedule ID: 9
+[10-Feb-2026 04:07:59 Europe/Berlin] Input data: {"startTime":"2026-02-10T12:05","endTime":"2026-02-10T13:05","keterangan":"coba"}
+[10-Feb-2026 04:07:59 Europe/Berlin] INSERT executed successfully. New rest schedule ID: 10
+[10-Feb-2026 04:08:14 Europe/Berlin] Input data: {"startTime":"2026-02-10T15:11","endTime":"2026-02-10T16:13","keterangan":"istirahat shift 1","id":"8"}
+[10-Feb-2026 04:08:14 Europe/Berlin] UPDATE executed successfully for rest schedule ID: 8
