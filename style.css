@@ -69,29 +69,95 @@ h2#report-subtitle {
     align-items: center;
     gap: 5px;
 }
-.btn:hover { opacity: 0.9; }
-.btn:active { transform: scale(0.95); }
-.btn-primary { background-color: #007bff; color: white; }
-.btn-danger { background-color: #dc3545; color: white; }
-.btn-warning { background-color: #ffc107; color: #212529; }
-.btn-info { background-color: #17a2b8; color: white; }
-.btn-dark { background-color: #343a40; color: white; }
+.btn:hover { 
+    opacity: 0.9;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+.btn:active { 
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.btn-primary { 
+    background-color: #007bff; 
+    color: white;
+    transition: all 0.3s ease;
+    border: 2px solid #007bff;
+}
+.btn-primary:hover {
+    background-color: white;
+    color: #007bff;
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+.btn-danger { 
+    background-color: #dc3545; 
+    color: white;
+    transition: all 0.3s ease;
+    border: 2px solid #dc3545;
+}
+.btn-danger:hover {
+    background-color: white;
+    color: #dc3545;
+    border-color: #dc3545;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+.btn-warning { 
+    background-color: #ffc107; 
+    color: #212529;
+    transition: all 0.3s ease;
+    border: 2px solid #ffc107;
+}
+.btn-warning:hover {
+    background-color: #212529;
+    color: #ffc107;
+    border-color: #ffc107;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+.btn-info { 
+    background-color: #17a2b8; 
+    color: white;
+    transition: all 0.3s ease;
+    border: 2px solid #17a2b8;
+}
+.btn-info:hover {
+    background-color: white;
+    color: #17a2b8;
+    border-color: #17a2b8;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+.btn-dark { 
+    background-color: #343a40; 
+    color: white;
+    transition: all 0.3s ease;
+    border: 2px solid #343a40;
+}
+.btn-dark:hover {
+    background-color: white;
+    color: #343a40;
+    border-color: #343a40;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
 .btn-success { background-color: #28a745; color: white; }
 .btn-secondary { background-color: #6c757d; color: white; }
 .btn-master { 
-    background-color: white; 
-    color: #1a1a1a; 
+    background-color: #1a1a1a;
+    color: white;
     border: 2.5px solid #1a1a1a;
     font-weight: 600;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
 }
 .btn-master:hover { 
-    background-color: #1a1a1a;
-    color: white;
+    background-color: white;
+    color: #1a1a1a;
     border-color: #1a1a1a;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-    opacity: 1;
     transform: translateY(-2px);
 }
 .btn-master:active {

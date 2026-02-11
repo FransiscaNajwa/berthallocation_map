@@ -1308,7 +1308,391 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
-        restModal.style.display = 'block';
+        restModal.style.display = 'none';
+    }
+
+    async function exportMonthlyPDF() {
+        const exportBtn = document.getElementById('export-pdf-btn');
+        const originalBtnHTML = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generate...';
+        
+        const pdfHeader = document.getElementById('pdf-header');
+        const pelindoLogoInHeader = pdfHeader.querySelector('.pdf-logo');
+        const mainHeader = document.querySelector('.main-header');
+        const berthMapContainer = document.getElementById('berth-map-container');
+        const legendsScrollContainer = document.querySelector('.legends-scroll-container');
+        const currentTimeIndicatorPDF = document.getElementById('current-time-indicator');
+        const berthDividerLinePDF = document.getElementById('berth-divider-line');
+        const gridScroll = document.querySelector('.grid-scroll-container');
+        const gridContainer = document.querySelector('.grid-container');
+        const yAxisColumn = document.querySelector('.y-axis-column');
+        const legendsWrapper = document.querySelector('.bottom-legends-wrapper');
+        
+        try {
+            // IMPORTANT: Always export FULL month (1st to last day)
+            let startDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth(), 1);
+            let endDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, 0);
+            
+            const filename = `Berth-Allocation-Bulanan-${startDate.toISOString().split('T')[0]}.pdf`;
+            
+            console.log(`[Monthly PDF] Exporting FULL MONTH: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+            
+            // Save original date
+            const originalStartDate = new Date(currentStartDate);
+            
+            // Generate weeks array (include partial weeks)
+            const weeks = [];
+            let weekStart = new Date(startDate);
+            while (weekStart <= endDate) {
+                let weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                // Include semua minggu, termasuk yang partial di akhir
+                if (weekEnd > endDate) {
+                    weekEnd = new Date(endDate);
+                }
+                
+                weeks.push({
+                    start: new Date(weekStart),
+                    end: new Date(weekEnd)
+                });
+                
+                weekStart.setDate(weekStart.getDate() + 7);
+            }
+            
+            console.log(`[Monthly PDF] Total weeks to export: ${weeks.length}`);
+            
+            // Prepare UI for PDF - same as weekly export
+            mainHeader.classList.add('hide-for-pdf');
+            
+            if (pelindoLogoInHeader) {
+                pelindoLogoInHeader.crossOrigin = "anonymous";
+            }
+            
+            // Save original states
+            const oldGridScrollOverflow = gridScroll.style.overflowX;
+            const oldGridScrollLeft = gridScroll.scrollLeft;
+            const oldLegendsScrollLeft = legendsScrollContainer.scrollLeft;
+            const oldTimeIndicatorDisplay = currentTimeIndicatorPDF ? currentTimeIndicatorPDF.style.display : 'none';
+            const oldDividerDisplay = berthDividerLinePDF ? berthDividerLinePDF.style.display : 'block';
+            
+            // Hide time indicators
+            if (currentTimeIndicatorPDF) currentTimeIndicatorPDF.style.display = 'none';
+            if (berthDividerLinePDF) berthDividerLinePDF.style.display = 'none';
+            
+            // Set grid to show full width (like weekly)
+            gridScroll.style.overflowX = 'visible';
+            gridScroll.scrollLeft = 0;
+            legendsScrollContainer.scrollLeft = 0;
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            let isFirstPage = true;
+            
+            for (let i = 0; i < weeks.length; i++) {
+                const week = weeks[i];
+                console.log(`[Monthly PDF] Processing week ${i + 1}/${weeks.length}: ${week.start.toISOString().split('T')[0]} to ${week.end.toISOString().split('T')[0]}`);
+                
+                // Calculate actual days in this week
+                const actualDays = Math.ceil((week.end - week.start) / (1000 * 60 * 60 * 24)) + 1;
+                const isPartialWeek = actualDays < 7;
+                
+                console.log(`[Monthly PDF] Week ${i + 1} has ${actualDays} days (${isPartialWeek ? 'partial' : 'full'})`);
+                
+                // Set currentStartDate to this week
+                currentStartDate = week.start;
+                
+                // Refresh map rendering
+                updateDisplay();
+                
+                // Wait for rendering - important!
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                try {
+                    // Calculate capture width based on actual days
+                    let captureWidth, captureHeight;
+                    
+                    if (isPartialWeek) {
+                        // For partial week, calculate specific width
+                        // Width = y-axis + (actualDays * 24 hours * HOUR_WIDTH)
+                        const yAxisWidth = document.querySelector('.y-axis-column')?.offsetWidth || 60;
+                        captureWidth = yAxisWidth + (actualDays * 24 * 25); // 25 = HOUR_WIDTH
+                        captureHeight = berthMapContainer.scrollHeight;
+                        console.log(`[Monthly PDF] Partial week capture width: ${captureWidth}px (${actualDays} days)`);
+                    } else {
+                        // For full week, use full scrollWidth
+                        captureWidth = berthMapContainer.scrollWidth;
+                        captureHeight = berthMapContainer.scrollHeight;
+                    }
+                    
+                    // Capture the berth map container
+                    const canvas = await html2canvas(berthMapContainer, {
+                        scale: 1,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        width: captureWidth,
+                        height: captureHeight
+                    });
+                    
+                    if (canvas.width === 0 || canvas.height === 0) {
+                        console.warn(`[Monthly PDF] Skipping empty canvas for week ${i + 1}`);
+                        continue;
+                    }
+                    
+                    const imgData = canvas.toDataURL('image/png', 0.95);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // Fit to full page width
+                    let imgWidth = pageWidth;
+                    let imgHeight = (canvas.height / canvas.width) * imgWidth;
+                    
+                    // Jika lebih tinggi dari page height, skala down
+                    if (imgHeight > pageHeight) {
+                        imgHeight = pageHeight;
+                        imgWidth = (canvas.width / canvas.height) * imgHeight;
+                    }
+                    
+                    // Center if needed
+                    const xPos = (pageWidth - imgWidth) / 2;
+                    const yPos = (pageHeight - imgHeight) / 2;
+                    
+                    if (!isFirstPage) {
+                        pdf.addPage();
+                    }
+                    
+                    pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+                    isFirstPage = false;
+                    console.log(`[Monthly PDF] Added week ${i + 1}, canvas: ${canvas.width}x${canvas.height}, pdf: ${imgWidth}x${imgHeight}mm`);
+                    
+                } catch (pageError) {
+                    console.error(`[Monthly PDF] Error processing week ${i + 1}:`, pageError);
+                }
+            }
+            
+            // Restore original date and view
+            currentStartDate = new Date(originalStartDate);
+            updateDisplay();
+            
+            // Restore UI
+            mainHeader.classList.remove('hide-for-pdf');
+            gridScroll.style.overflowX = oldGridScrollOverflow;
+            gridScroll.scrollLeft = oldGridScrollLeft;
+            legendsScrollContainer.scrollLeft = oldLegendsScrollLeft;
+            if (currentTimeIndicatorPDF) currentTimeIndicatorPDF.style.display = oldTimeIndicatorDisplay;
+            if (berthDividerLinePDF) berthDividerLinePDF.style.display = oldDividerDisplay;
+            
+            // Save PDF
+            pdf.save(filename);
+            console.log('[Monthly PDF] PDF saved successfully');
+            alert('✅ PDF berhasil di-download! 1 halaman = 1 minggu');
+            
+        } catch (error) {
+            console.error('Error exporting monthly PDF:', error);
+            console.error('Stack:', error.stack);
+            alert('❌ Error: ' + error.message);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalBtnHTML;
+        }
+    }
+
+    async function exportCustomDatePDF(startDateStr, endDateStr) {
+        const exportBtn = document.getElementById('export-pdf-btn');
+        const originalBtnHTML = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generate...';
+        
+        const pdfHeader = document.getElementById('pdf-header');
+        const pelindoLogoInHeader = pdfHeader.querySelector('.pdf-logo');
+        const mainHeader = document.querySelector('.main-header');
+        const berthMapContainer = document.getElementById('berth-map-container');
+        const legendsScrollContainer = document.querySelector('.legends-scroll-container');
+        const currentTimeIndicatorPDF = document.getElementById('current-time-indicator');
+        const berthDividerLinePDF = document.getElementById('berth-divider-line');
+        const gridScroll = document.querySelector('.grid-scroll-container');
+        
+        try {
+            const filename = `Berth-Allocation-Custom-${startDateStr}_to_${endDateStr}.pdf`;
+            
+            console.log(`[Custom PDF] Exporting from ${startDateStr} to ${endDateStr}`);
+            
+            const startDate = new Date(startDateStr);
+            const endDate = new Date(endDateStr);
+            
+            // Save original date
+            const originalStartDate = new Date(currentStartDate);
+            
+            // Generate weeks array (include partial weeks)
+            const weeks = [];
+            let weekStart = new Date(startDate);
+            while (weekStart <= endDate) {
+                let weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                // Include semua minggu, termasuk yang partial di akhir
+                if (weekEnd > endDate) {
+                    weekEnd = new Date(endDate);
+                }
+                
+                weeks.push({
+                    start: new Date(weekStart),
+                    end: new Date(weekEnd)
+                });
+                
+                weekStart.setDate(weekStart.getDate() + 7);
+            }
+            
+            console.log(`[Custom PDF] Total weeks to export: ${weeks.length}`);
+            
+            // Prepare UI for PDF
+            mainHeader.classList.add('hide-for-pdf');
+            
+            if (pelindoLogoInHeader) {
+                pelindoLogoInHeader.crossOrigin = "anonymous";
+            }
+            
+            // Save original states
+            const oldGridScrollOverflow = gridScroll.style.overflowX;
+            const oldGridScrollLeft = gridScroll.scrollLeft;
+            const oldLegendsScrollLeft = legendsScrollContainer.scrollLeft;
+            const oldTimeIndicatorDisplay = currentTimeIndicatorPDF ? currentTimeIndicatorPDF.style.display : 'none';
+            const oldDividerDisplay = berthDividerLinePDF ? berthDividerLinePDF.style.display : 'block';
+            
+            // Hide time indicators
+            if (currentTimeIndicatorPDF) currentTimeIndicatorPDF.style.display = 'none';
+            if (berthDividerLinePDF) berthDividerLinePDF.style.display = 'none';
+            
+            // Set grid to show full width
+            gridScroll.style.overflowX = 'visible';
+            gridScroll.scrollLeft = 0;
+            legendsScrollContainer.scrollLeft = 0;
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            let isFirstPage = true;
+            
+            for (let i = 0; i < weeks.length; i++) {
+                const week = weeks[i];
+                console.log(`[Custom PDF] Processing week ${i + 1}/${weeks.length}: ${week.start.toISOString().split('T')[0]} to ${week.end.toISOString().split('T')[0]}`);
+                
+                // Calculate actual days in this week
+                const actualDays = Math.ceil((week.end - week.start) / (1000 * 60 * 60 * 24)) + 1;
+                const isPartialWeek = actualDays < 7;
+                
+                console.log(`[Custom PDF] Week ${i + 1} has ${actualDays} days (${isPartialWeek ? 'partial' : 'full'})`);
+                
+                // Set currentStartDate to this week
+                currentStartDate = week.start;
+                
+                // Refresh map rendering
+                updateDisplay();
+                
+                // Wait for rendering
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                try {
+                    // Calculate capture width based on actual days
+                    let captureWidth, captureHeight;
+                    
+                    if (isPartialWeek) {
+                        // For partial week, calculate specific width
+                        // Width = y-axis + (actualDays * 24 hours * HOUR_WIDTH)
+                        const yAxisWidth = document.querySelector('.y-axis-column')?.offsetWidth || 60;
+                        captureWidth = yAxisWidth + (actualDays * 24 * 25); // 25 = HOUR_WIDTH
+                        captureHeight = berthMapContainer.scrollHeight;
+                        console.log(`[Custom PDF] Partial week capture width: ${captureWidth}px (${actualDays} days)`);
+                    } else {
+                        // For full week, use full scrollWidth
+                        captureWidth = berthMapContainer.scrollWidth;
+                        captureHeight = berthMapContainer.scrollHeight;
+                    }
+                    
+                    // Capture the berth map container
+                    const canvas = await html2canvas(berthMapContainer, {
+                        scale: 1,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        width: captureWidth,
+                        height: captureHeight
+                    });
+                    
+                    if (canvas.width === 0 || canvas.height === 0) {
+                        console.warn(`[Custom PDF] Skipping empty canvas for week ${i + 1}`);
+                        continue;
+                    }
+                    
+                    const imgData = canvas.toDataURL('image/png', 0.95);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // Fit to full page width
+                    let imgWidth = pageWidth;
+                    let imgHeight = (canvas.height / canvas.width) * imgWidth;
+                    
+                    // Jika lebih tinggi dari page height, skala down
+                    if (imgHeight > pageHeight) {
+                        imgHeight = pageHeight;
+                        imgWidth = (canvas.width / canvas.height) * imgHeight;
+                    }
+                    
+                    // Center
+                    const xPos = (pageWidth - imgWidth) / 2;
+                    const yPos = (pageHeight - imgHeight) / 2;
+                    
+                    if (!isFirstPage) {
+                        pdf.addPage();
+                    }
+                    
+                    pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+                    isFirstPage = false;
+                    console.log(`[Custom PDF] Added week ${i + 1}, canvas: ${canvas.width}x${canvas.height}, pdf: ${imgWidth}x${imgHeight}mm`);
+                    
+                } catch (pageError) {
+                    console.error(`[Custom PDF] Error processing week ${i + 1}:`, pageError);
+                }
+            }
+            
+            // Restore original date and view
+            currentStartDate = new Date(originalStartDate);
+            updateDisplay();
+            
+            // Restore UI
+            mainHeader.classList.remove('hide-for-pdf');
+            gridScroll.style.overflowX = oldGridScrollOverflow;
+            gridScroll.scrollLeft = oldGridScrollLeft;
+            legendsScrollContainer.scrollLeft = oldLegendsScrollLeft;
+            if (currentTimeIndicatorPDF) currentTimeIndicatorPDF.style.display = oldTimeIndicatorDisplay;
+            if (berthDividerLinePDF) berthDividerLinePDF.style.display = oldDividerDisplay;
+            
+            // Save PDF
+            pdf.save(filename);
+            console.log('[Custom PDF] PDF saved successfully');
+            alert('✅ PDF berhasil di-download!');
+            
+        } catch (error) {
+            console.error('Error exporting custom date PDF:', error);
+            console.error('Stack:', error.stack);
+            alert('❌ Error: ' + error.message);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalBtnHTML;
+        }
     }
 
     async function exportToPDF(type = 'weekly', customStartDate = null, customEndDate = null) {
@@ -1382,6 +1766,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let pdfFileName, pdfDateRangeStr;
             let captureWidth;
             let captureStartX = 0;
+            let capturePages = []; // Array untuk menyimpan info pages yang akan di-capture
 
             const mapFullWidth = gridContainer.scrollWidth + (yAxisColumn ? yAxisColumn.offsetWidth : 0);
             const legendsFullWidth = legendsWrapper.scrollWidth;
@@ -1390,6 +1775,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const hourWidth = HOUR_WIDTH;
             const dayWidth = 24 * hourWidth;
             const yAxisWidth = yAxisColumn ? yAxisColumn.offsetWidth : 0;
+            
+            // Batasan maksimal lebar per capture untuk menghindari html2canvas limitation
+            const MAX_CAPTURE_WIDTH = 7000; // pixels
 
             // --- LOGIKA BERBAGAI TIPE PDF ---
             if (type === '1-2days') {
@@ -1426,22 +1814,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 legendsScrollContainer.scrollLeft = 0;
 
             } else if (type === 'monthly') {
-                // Bulanan (30 hari dari tanggal sekarang)
+                // Bulanan akan di-handle di capture section (split per minggu)
                 let startDate = new Date(currentStartDate);
-                let endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 29); // 30 hari
+                startDate.setDate(1);
+                let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
                 
                 pdfDateRangeStr = `${formatDate(startDate)} - ${formatDate(endDate)}`;
                 pdfFileName = `Berth-Allocation-Bulanan-${startDate.toISOString().split('T')[0]}.pdf`;
-
-                const daysInRange = 30;
-                captureWidth = yAxisWidth + (daysInRange * dayWidth);
-                captureStartX = 0;
-                targetScrollLeft = 0;
                 
-                gridScroll.style.overflowX = 'visible';
-                gridScroll.scrollLeft = 0;
-                legendsScrollContainer.scrollLeft = 0;
+                // captureWidth tidak digunakan untuk monthly karena di-handle per minggu
+                captureWidth = 0;
 
             } else if (type === 'custom') {
                 // Custom Date Range
@@ -1492,13 +1874,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 legendsScrollContainer.scrollLeft = 0;
             }
 
-            // --- SET LEBAR UNTUK CAPTURE ---
-            pdfHeader.style.width = `${captureWidth}px`;
-            berthMapContainer.style.width = `${captureWidth}px`;
-            legendsScrollContainer.style.width = (type === '1-2days' ? `${legendsFullWidth}px` : `${captureWidth}px`);
+            // Jika bukan monthly, set width untuk capture
+            if (type !== 'monthly') {
+                // --- SET LEBAR UNTUK CAPTURE ---
+                pdfHeader.style.width = `${captureWidth}px`;
+                berthMapContainer.style.width = `${captureWidth}px`;
+                legendsScrollContainer.style.width = (type === '1-2days' ? `${legendsFullWidth}px` : `${captureWidth}px`);
+            }
+            // Untuk monthly, width akan di-set per minggu di section capture
             
             const dateRangeEl = pdfHeader.querySelector('.pdf-date-range');
-            if(dateRangeEl) dateRangeEl.textContent = pdfDateRangeStr;
+            if(dateRangeEl && type !== 'monthly') {
+                // Untuk non-monthly, set date range sekarang
+                dateRangeEl.textContent = pdfDateRangeStr;
+            }
+            // Untuk monthly, dateRangeEl akan di-update per minggu di section capture
             
             pdfHeader.style.display = 'flex'; 
             if(berthDividerLinePDF) berthDividerLinePDF.style.display = 'block';
@@ -1523,57 +1913,175 @@ document.addEventListener('DOMContentLoaded', () => {
                 backgroundColor: '#ffffff' // PENTING: JPEG butuh background putih
             };
 
-            const optionsBerthMap = {
-                ...commonOptions,
-                width: captureWidth, 
-                height: berthMapContainer.scrollHeight,
-                x: 0, 
-            };
+            let doc = null;
+            let pdfWidthMM = 0;
 
-            const optionsLegends = {
-                ...commonOptions,
-                width: (type === '1-2days' ? legendsFullWidth : captureWidth),
-                height: legendsScrollContainer.scrollHeight,
-                x: 0, 
-            };
-            const optionsHeader = { 
-                ...commonOptions, 
-                width: captureWidth, 
-                height: pdfHeader.offsetHeight, 
-                x: 0 
-            };
-
-            // --- CAPTURE ---
-            const canvasHeader = await html2canvas(pdfHeader, optionsHeader);
-            const canvasMapCombined = await html2canvas(berthMapContainer, optionsBerthMap);
-            const canvasLegends = await html2canvas(legendsScrollContainer, optionsLegends);
-
-            const canvases = [canvasHeader, canvasMapCombined, canvasLegends];
-            
-            // Hitung Ukuran PDF
-            // 96 DPI adalah standar web. 25.4 mm = 1 inch
-            const pdfWidthMM = (canvasMapCombined.width / scale / 96) * 25.4; 
-            const totalPdfHeightMM = canvases.reduce((sum, c) => sum + (c.height / scale / 96) * 25.4, 0);
-
-            const doc = new jsPDF({
-                orientation: pdfWidthMM > totalPdfHeightMM ? 'landscape' : 'portrait',
-                unit: 'mm',
-                format: [pdfWidthMM, totalPdfHeightMM],
-                compress: true // Aktifkan kompresi internal jsPDF
-            });
-
-            let yOffset = 0;
-            for (const canvas of canvases) {
-                // --- PENTING: UBAH KE JPEG UNTUK UKURAN KECIL ---
-                // Format: 'image/jpeg', Quality: 0.75 (75%)
-                const imgData = canvas.toDataURL('image/jpeg', 0.75); 
+            // ===== JIKA MONTHLY: SPLIT PER MINGGU =====
+            if (type === 'monthly') {
+                console.log(`[PDF Export] Monthly export - splitting by weeks`);
                 
-                const imgHeightMM = (canvas.height / scale / 96) * 25.4;
-                const imgWidthMM = (canvas.width / scale / 96) * 25.4;
+                let startDate = new Date(currentStartDate);
+                startDate.setDate(1); // Mulai dari hari 1 bulan
+                let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0); // Hari terakhir bulan
                 
-                // Parameter 'FAST' mempercepat kompresi dan mengurangi ukuran
-                doc.addImage(imgData, 'JPEG', 0, yOffset, imgWidthMM, imgHeightMM, undefined, 'FAST');
-                yOffset += imgHeightMM;
+                // Array untuk menyimpan semua weeks
+                let weeks = [];
+                let currentWeekStart = new Date(startDate);
+                
+                while (currentWeekStart <= endDate) {
+                    let currentWeekEnd = new Date(currentWeekStart);
+                    currentWeekEnd.setDate(currentWeekEnd.getDate() + 6); // +6 untuk total 7 hari
+                    
+                    if (currentWeekEnd > endDate) {
+                        currentWeekEnd = new Date(endDate);
+                    }
+                    
+                    const daysInWeek = Math.ceil((currentWeekEnd - currentWeekStart) / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    weeks.push({
+                        start: new Date(currentWeekStart),
+                        end: new Date(currentWeekEnd),
+                        daysInWeek: daysInWeek,
+                        dateStr: `${formatDate(new Date(currentWeekStart))} - ${formatDate(new Date(currentWeekEnd))}`
+                    });
+                    
+                    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                }
+                
+                // Buat PDF dengan multiple pages
+                doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true
+                });
+                
+                // Capture setiap minggu
+                for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+                    const weekInfo = weeks[weekIdx];
+                    const weekWidth = yAxisWidth + (weekInfo.daysInWeek * dayWidth);
+                    
+                    // Update width untuk minggu ini
+                    pdfHeader.style.width = `${weekWidth}px`;
+                    berthMapContainer.style.width = `${weekWidth}px`;
+                    legendsScrollContainer.style.width = `${weekWidth}px`;
+                    
+                    // Update date range di header
+                    const dateRangeEl = pdfHeader.querySelector('.pdf-date-range');
+                    if (dateRangeEl) {
+                        dateRangeEl.textContent = weekInfo.dateStr;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 300)); // Delay untuk render
+                    
+                    // Capture untuk minggu ini
+                    const optionsHeaderWeek = {
+                        ...commonOptions,
+                        width: weekWidth,
+                        height: pdfHeader.offsetHeight,
+                        x: 0
+                    };
+                    
+                    const optionsMapWeek = {
+                        ...commonOptions,
+                        width: weekWidth,
+                        height: berthMapContainer.scrollHeight,
+                        x: 0
+                    };
+                    
+                    const optionsLegendsWeek = {
+                        ...commonOptions,
+                        width: weekWidth,
+                        height: legendsScrollContainer.scrollHeight,
+                        x: 0
+                    };
+                    
+                    // Capture semua elemen
+                    const canvasHeaderWeek = await html2canvas(pdfHeader, optionsHeaderWeek);
+                    const canvasMapWeek = await html2canvas(berthMapContainer, optionsMapWeek);
+                    const canvasLegendsWeek = await html2canvas(legendsScrollContainer, optionsLegendsWeek);
+                    
+                    // Hitung ukuran
+                    pdfWidthMM = (canvasMapWeek.width / scale / 96) * 25.4;
+                    const headerHeightMM = (canvasHeaderWeek.height / scale / 96) * 25.4;
+                    const mapHeightMM = (canvasMapWeek.height / scale / 96) * 25.4;
+                    const legenHeightMM = (canvasLegendsWeek.height / scale / 96) * 25.4;
+                    
+                    // Tambah page baru (kecuali page pertama)
+                    if (weekIdx > 0) {
+                        doc.addPage();
+                    }
+                    
+                    let yOffset = 0;
+                    
+                    // Add header
+                    const headerImgData = canvasHeaderWeek.toDataURL('image/jpeg', 0.75);
+                    const headerWidthMM = (canvasHeaderWeek.width / scale / 96) * 25.4;
+                    doc.addImage(headerImgData, 'JPEG', 0, yOffset, headerWidthMM, headerHeightMM, undefined, 'FAST');
+                    yOffset += headerHeightMM;
+                    
+                    // Add map
+                    const mapImgData = canvasMapWeek.toDataURL('image/jpeg', 0.75);
+                    const mapWidthMM = (canvasMapWeek.width / scale / 96) * 25.4;
+                    doc.addImage(mapImgData, 'JPEG', 0, yOffset, mapWidthMM, mapHeightMM, undefined, 'FAST');
+                    yOffset += mapHeightMM;
+                    
+                    // Add legends
+                    const legenImgData = canvasLegendsWeek.toDataURL('image/jpeg', 0.75);
+                    const legenWidthMM = (canvasLegendsWeek.width / scale / 96) * 25.4;
+                    doc.addImage(legenImgData, 'JPEG', 0, yOffset, legenWidthMM, legenHeightMM, undefined, 'FAST');
+                }
+                
+            } else {
+                // ===== JIKA BUKAN MONTHLY: CAPTURE NORMAL =====
+                const optionsBerthMap = {
+                    ...commonOptions,
+                    width: captureWidth, 
+                    height: berthMapContainer.scrollHeight,
+                    x: 0, 
+                };
+
+                const optionsLegends = {
+                    ...commonOptions,
+                    width: (type === '1-2days' ? legendsFullWidth : captureWidth),
+                    height: legendsScrollContainer.scrollHeight,
+                    x: 0, 
+                };
+                const optionsHeader = { 
+                    ...commonOptions, 
+                    width: captureWidth, 
+                    height: pdfHeader.offsetHeight, 
+                    x: 0 
+                };
+
+                // --- CAPTURE ---
+                const canvasHeader = await html2canvas(pdfHeader, optionsHeader);
+                const canvasMapCombined = await html2canvas(berthMapContainer, optionsBerthMap);
+                const canvasLegends = await html2canvas(legendsScrollContainer, optionsLegends);
+
+                const canvases = [canvasHeader, canvasMapCombined, canvasLegends];
+                
+                // Hitung Ukuran PDF
+                pdfWidthMM = (canvasMapCombined.width / scale / 96) * 25.4; 
+                const totalPdfHeightMM = canvases.reduce((sum, c) => sum + (c.height / scale / 96) * 25.4, 0);
+
+                doc = new jsPDF({
+                    orientation: pdfWidthMM > totalPdfHeightMM ? 'landscape' : 'portrait',
+                    unit: 'mm',
+                    format: [pdfWidthMM, totalPdfHeightMM],
+                    compress: true
+                });
+
+                let yOffset = 0;
+                for (const canvas of canvases) {
+                    const imgData = canvas.toDataURL('image/jpeg', 0.75); 
+                    
+                    const imgHeightMM = (canvas.height / scale / 96) * 25.4;
+                    const imgWidthMM = (canvas.width / scale / 96) * 25.4;
+                    
+                    doc.addImage(imgData, 'JPEG', 0, yOffset, imgWidthMM, imgHeightMM, undefined, 'FAST');
+                    yOffset += imgHeightMM;
+                }
             }
 
             doc.save(pdfFileName);
@@ -2271,8 +2779,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     pdfEndDate.value = nextWeek.toISOString().split('T')[0];
                     
                     customDateModal.style.display = 'block';
+                } else if (type === 'monthly') {
+                    // Export bulanan menggunakan server-side (PHP)
+                    exportMonthlyPDF(); 
                 } else {
-                    // Export langsung untuk tipe lain
+                    // Export langsung untuk tipe lain (1-2days, weekly)
                     exportToPDF(type); 
                 }
             });
@@ -2309,7 +2820,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 customDateModal.style.display = 'none';
-                exportToPDF('custom', startDate, endDate);
+                exportCustomDatePDF(startDate, endDate);
             });
         }
 
