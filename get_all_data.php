@@ -7,8 +7,37 @@ error_log("Fetching data from database...");
 $response = [];
 
 try {
-    // Ambil semua data dari tabel ship_schedules tanpa join ke berths
-    $ships = $conn->query("SELECT * FROM ship_schedules ORDER BY etaTime ASC");
+    // Ambil semua data dari tabel ship_schedules dengan SEMUA field names (original untuk BA MAP + baru untuk Realisasi)
+    $ships = $conn->query("
+        SELECT 
+            id,
+            company,
+            shipName,
+            code,
+            wsCode,
+            voyage,
+            length,
+            draft,
+            destPort,
+            nKd,
+            minKd,
+            mean,
+            loadValue,
+            dischargeValue,
+            etaTime,
+            startTime,
+            etcTime,
+            endTime,
+            status,
+            berthSide,
+            bsh,
+            qccName,
+            created_at,
+            shipping_company_id,
+            startKd
+        FROM ship_schedules 
+        ORDER BY etaTime ASC
+    ");
     $response['shipSchedules'] = $ships->fetch_all(MYSQLI_ASSOC);
 
     error_log("Ship schedules fetched: " . json_encode($response['shipSchedules']));

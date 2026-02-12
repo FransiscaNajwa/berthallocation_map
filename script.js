@@ -1,3 +1,12 @@
+const API_BASE_URL = 'http://localhost/ba_map_app';
+
+function getApiUrl(endpoint) {
+    if (endpoint.startsWith('http')) return endpoint;
+    const base = API_BASE_URL ? API_BASE_URL.replace(/\/+$/, '') : '';
+    const path = endpoint.replace(/^\/+/, '');
+    return base ? `${base}/${path}` : endpoint;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Global error handler untuk catch semua JavaScript errors
     window.addEventListener('error', (event) => {
@@ -11,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const KD_HEIGHT_UNIT = 40;
     const KD_MIN = Math.min(...KD_MARKERS);
     const PENDING_FORM_KEY = 'pendingShipForm';
-    const API_BASE_URL = 'http://localhost/ba_map_app'; // Backend API URL (PHP)
+    // Backend API URL (PHP) defined globally as API_BASE_URL
 
     let shipSchedules = [];
     let editingShipIndex = null;
@@ -38,15 +47,125 @@ document.addEventListener('DOMContentLoaded', () => {
                 options.body = JSON.stringify(data);
             }
             const response = await fetch(`${API_BASE_URL}/${endpoint}`, options);
+            const result = await response.json();
+            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // Throw error with parsed JSON data (including overlap_details if present)
+                const error = new Error(result.message || `HTTP error! status: ${response.status}`);
+                error.overlap_details = result.overlap_details || [];
+                error.status = result.status;
+                throw error;
             }
-            return await response.json();
+            
+            // Check if response indicates error status
+            if (result.status === 'error') {
+                const error = new Error(result.message || 'Unknown error');
+                error.overlap_details = result.overlap_details || [];
+                error.status = result.status;
+                throw error;
+            }
+            
+            return result;
         } catch (error) {
             console.error('API call error:', error);
-            alert('Terjadi kesalahan: ' + error.message);
+            // Don't show alert here, let the caller handle it
             throw error;
         }
+    }
+
+    // Helper function untuk menampilkan notifikasi overlap yang lebih user-friendly
+    function showOverlapNotification(overlapDetails, message) {
+        const modal = document.getElementById('custom-notification-modal');
+        const body = document.getElementById('notification-body');
+        const closeBtn = document.getElementById('close-notification-btn');
+        
+        // Build notification content
+        let content = `
+            <div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <p style="margin: 0; color: #856404; font-size: 15px; line-height: 1.5;">
+                    <strong>⚠️ ${message}</strong>
+                </p>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #333;">Jadwal yang Bentrok:</h3>
+        `;
+        
+        overlapDetails.forEach((overlap, index) => {
+            const startTime = new Date(overlap.startTime);
+            const endTime = new Date(overlap.endTime);
+            
+            content += `
+                <div style="
+                    margin-bottom: 15px;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-left: 4px solid #dc3545;
+                    border-radius: 4px;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <h4 style="margin: 0; font-size: 15px; color: #dc3545; font-weight: 600;">
+                            ${index + 1}. ${overlap.shipName}
+                        </h4>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 15px; font-size: 13px; color: #555;">
+                        <div style="font-weight: 600;">KD Meter:</div>
+                        <div>KD ${overlap.startKd} - ${overlap.endKd} (${overlap.endKd - overlap.startKd}m)</div>
+                        
+                        <div style="font-weight: 600;">Waktu Mulai:</div>
+                        <div>${startTime.toLocaleDateString('id-ID', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</div>
+                        
+                        <div style="font-weight: 600;">Waktu Selesai:</div>
+                        <div>${endTime.toLocaleDateString('id-ID', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</div>
+                        
+                        <div style="font-weight: 600;">Alasan:</div>
+                        <div style="color: #dc3545; font-weight: 500;">${overlap.reason}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        content += `
+            </div>
+            
+            <div style="margin-top: 25px; padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                <p style="margin: 0; color: #0c5460; font-size: 14px; line-height: 1.6;">
+                    <strong>ℹ️ Informasi:</strong><br>
+                    Sistem tidak mengizinkan jadwal kapal yang bertumpukan pada lokasi (KD meter) dan waktu yang sama/hampir sama. 
+                    Silakan ubah waktu atau lokasi dermaga (KD meter) untuk menghindari bentrok.
+                </p>
+            </div>
+        `;
+        
+        body.innerHTML = content;
+        modal.style.display = 'flex';
+        
+        // Close button handler
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+        
+        // Close when clicking outside
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
     }
 
     // Helper function untuk DELETE requests (dengan query parameters)
@@ -772,11 +891,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!datalist) return;
 
         datalist.innerHTML = '';
+        
+        // Tampilkan semua kapal dari master ships
+        // Nama kapal yang sama boleh muncul, yang penting kombinasi (nama + voyage + WS) berbeda
         masterShips.forEach(ship => {
             const option = document.createElement('option');
             option.value = ship.ship_name;
             datalist.appendChild(option);
         });
+        
+        console.log('🚢 Ship names loaded in dropdown:', datalist.children.length);
     }
 
     async function saveMasterShip(formData) {
@@ -1192,8 +1316,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             document.getElementById('start-kd').value = startKdValue;
+            
+            // Set N-KD (panjang kapal)
             const nKdValue = parseInt(ship.nKd, 10);
             document.getElementById('n-kd').value = isNaN(nKdValue) ? '' : nKdValue;
+            
+            // Hitung dan set End KD Display
+            if (!isNaN(nKdValue) && nKdValue > 0) {
+                const endKdCalculated = startKdValue + nKdValue;
+                document.getElementById('end-kd-display').value = endKdCalculated;
+            } else {
+                document.getElementById('end-kd-display').value = '';
+            }
+            
             document.getElementById('min-kd').value = ship.minKd || '';
             
             document.getElementById('load-value').value = ship.loadValue || 0;
@@ -1243,6 +1378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await apiDelete('ship', shipId);
                     shipSchedules.splice(editingShipIndex, 1);
                     updateDisplay();
+                    updateShipNameDatalist(); // Update dropdown untuk filter kapal aktif
                     modal.style.display = 'none';
                     shipForm.classList.remove('edit-mode');
                     alert('Data kapal berhasil dihapus dari database');
@@ -2185,6 +2321,10 @@ document.addEventListener('DOMContentLoaded', () => {
             formSubmitBtn.textContent = 'Submit';
             shipForm.classList.remove('edit-mode');
             deleteShipBtn.onclick = null;
+            
+            // Update dropdown kapal dengan filter kapal yang sedang aktif
+            updateShipNameDatalist();
+            
             // Trigger calculations terutama untuk readonly fields yang kosong
             setTimeout(() => {
                 calculateEndKdAndMean();
@@ -2320,12 +2460,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ===== AUTO-CALCULATION LOGIC UNTUK FORM SHIP =====
         
-        // Function untuk auto-calculate End KD dan Mean berdasarkan Start KD dan Length
+        // Function untuk auto-calculate N-KD, End KD dan Mean berdasarkan Start KD dan Length
         function calculateEndKdAndMean() {
             try {
                 const startKdInput = document.getElementById('start-kd');
                 const lengthInput = document.getElementById('ship-length');
-                const endKdInput = document.getElementById('n-kd');
+                const nKdInput = document.getElementById('n-kd');  // Field untuk N-KD (panjang kapal)
+                const endKdDisplayInput = document.getElementById('end-kd-display');  // Field untuk menampilkan End KD
                 const meanInput = document.getElementById('min-kd');
                 
                 const startKd = parseFloat(startKdInput.value) || 0;
@@ -2337,11 +2478,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const endKd = startKd + length;
                     const mean = (startKd + endKd) / 2;
                     
-                    endKdInput.value = endKd.toFixed(1);
+                    // PENTING: nKd harus berisi PANJANG KAPAL, bukan End KD!
+                    nKdInput.value = length.toFixed(1);  // N-KD = Panjang Kapal
+                    endKdDisplayInput.value = endKd.toFixed(1);  // End KD = Start KD + Panjang
                     meanInput.value = mean.toFixed(1);
                 } else {
                     // Kosongkan jika input tidak valid
-                    if (!endKdInput.value) endKdInput.value = '';
+                    if (!nKdInput.value) nKdInput.value = '';
+                    if (!endKdDisplayInput.value) endKdDisplayInput.value = '';
                     if (!meanInput.value) meanInput.value = '';
                 }
             } catch (error) {
@@ -2565,24 +2709,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('🔄 Calling UPDATE with ID:', shipData.id);
                         result = await apiCall('update_ship.php', 'POST', shipData);
                         console.log('✅ UPDATE result:', result);
+                        
+                        // Check if there's an overlap error during update
+                        if (result && result.overlap_details && result.overlap_details.length > 0) {
+                            showOverlapNotification(result.overlap_details, result.message);
+                            return; // Don't proceed with updating
+                        }
+                        
                         shipSchedules[editingShipIndex] = shipData;
                     } else {
                         // CREATE NEW
                         console.log('➕ Calling SAVE (NEW)');
                         result = await apiCall('save_ship.php', 'POST', shipData);
                         console.log('✅ SAVE result:', result);
+                        
+                        // Check if there's an overlap error
+                        if (result && result.overlap_details && result.overlap_details.length > 0) {
+                            showOverlapNotification(result.overlap_details, result.message);
+                            return; // Don't proceed with saving
+                        }
+                        
                         shipSchedules.unshift(shipData);
                     }
                     
                     // SUCCESS
                     updateDisplay();
+                    updateShipNameDatalist(); // Update dropdown untuk filter kapal aktif
                     modal.style.display = 'none';
                     shipForm.classList.remove('edit-mode');
                     clearPendingForm();
                     alert('✅ Data kapal berhasil disimpan!');
                 } catch (apiError) {
                     console.error('❌ API Error:', apiError);
-                    alert('❌ Error API: ' + apiError.message);
+                    
+                    // Check if error response contains overlap details
+                    if (apiError.overlap_details && apiError.overlap_details.length > 0) {
+                        showOverlapNotification(apiError.overlap_details, apiError.message);
+                    } else {
+                        alert('❌ Error API: ' + apiError.message);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Form Submit Error:', error);
@@ -2869,3 +3034,2093 @@ document.addEventListener('DOMContentLoaded', () => {
     initialize();
 
 });
+
+// ==================== EVALUASI WS NAVIGATION & CHARTS ====================
+let currentEvalChartBongkar = null;
+let currentEvalChartMuat = null;
+let currentChartPeriode = 'minggu';
+let chartUserChanged = false;
+
+function navigateToPage(page) {
+    // Hide all pages
+    document.querySelector('.app-container').style.display = 'none';
+    document.getElementById('realisasi-page').style.display = 'none';
+    document.getElementById('grafik-page').style.display = 'none';
+
+    // Show selected page
+    if (page === 'ba-map') {
+        document.querySelector('.app-container').style.display = 'block';
+    } else if (page === 'realisasi') {
+        document.getElementById('realisasi-page').style.display = 'block';
+    } else if (page === 'grafik') {
+        document.getElementById('grafik-page').style.display = 'block';
+        chartUserChanged = false;
+        setTimeout(() => {
+            initEvalChart();
+        }, 100);
+    }
+}
+
+// Form submission for Realisasi
+document.addEventListener('DOMContentLoaded', () => {
+    const realisasiForm = document.getElementById('realisasi-form');
+    const listButton = document.getElementById('btn-realisasi-list');
+    const listContainer = document.getElementById('realisasi-list');
+    const listBody = document.getElementById('realisasi-list-body');
+    const submitButton = document.getElementById('realisasi-submit-btn');
+    const filterDate = document.getElementById('realisasi-filter-date');
+    const filterMonth = document.getElementById('realisasi-filter-month');
+    const filterClear = document.getElementById('realisasi-filter-clear');
+    if (realisasiForm) {
+        realisasiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = buildRealisasiPayload();
+
+            try {
+                const response = await fetch(getApiUrl('save_realisasi.php'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ Data realisasi berhasil disimpan!');
+                    realisasiForm.reset();
+                    const idField = document.getElementById('realisasi-id');
+                    if (idField) idField.value = '';
+                    if (submitButton) submitButton.textContent = 'Submit';
+                    clearRealisasiRowSelection();
+                    
+                    // Always reload realisasi data to update dropdown suggestions
+                    const latest = await loadRealisasiData();
+                    
+                    // Update list if it's visible
+                    if (listContainer && listContainer.style.display !== 'none') {
+                        renderRealisasiList(latest);
+                    }
+                    updateEvalChart();
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan realisasi');
+                }
+            } catch (error) {
+                console.error('❌ Save realisasi error:', error);
+                alert('Terjadi kesalahan saat menyimpan realisasi: ' + error.message);
+            }
+        });
+    }
+
+    if (listButton) {
+        listButton.addEventListener('click', async () => {
+            if (!listContainer || !listBody) return;
+            if (listContainer.style.display === 'none') {
+                const data = await loadRealisasiData();
+                renderRealisasiList(data);
+                listContainer.style.display = 'block';
+                listButton.innerHTML = '<i class="fas fa-times"></i> Tutup Data Realisasi';
+            } else {
+                listContainer.style.display = 'none';
+                listButton.innerHTML = '<i class="fas fa-list"></i> Lihat Data Realisasi';
+            }
+        });
+    }
+
+    if (filterDate) {
+        filterDate.addEventListener('change', async () => {
+            const data = await loadRealisasiData();
+            renderRealisasiList(data);
+        });
+    }
+
+    if (filterMonth) {
+        filterMonth.addEventListener('change', async () => {
+            const data = await loadRealisasiData();
+            renderRealisasiList(data);
+        });
+    }
+
+    if (filterClear) {
+        filterClear.addEventListener('click', async () => {
+            if (filterDate) filterDate.value = '';
+            if (filterMonth) filterMonth.value = '';
+            const data = await loadRealisasiData();
+            renderRealisasiList(data);
+        });
+    }
+
+    const chartShip = document.getElementById('chart-ship');
+    const chartPeriode = document.getElementById('chart-periode');
+    const chartMonth = document.getElementById('chart-month');
+    const chartYear = document.getElementById('chart-year');
+
+    if (chartShip) {
+        chartShip.addEventListener('change', () => {
+            chartUserChanged = true;
+            updateEvalChart();
+        });
+    }
+
+    if (chartPeriode) {
+        chartPeriode.addEventListener('change', () => {
+            chartUserChanged = true;
+            updateEvalChart();
+        });
+    }
+
+    if (chartMonth) {
+        chartMonth.addEventListener('change', () => {
+            handleChartMonthChange();
+        });
+    }
+
+    if (chartYear) {
+        chartYear.addEventListener('change', () => {
+            handleChartYearChange();
+        });
+    }
+});
+
+// Chart functions
+function buildRealisasiPayload() {
+    const destinationValue = document.getElementById('realisasi-destination-port')?.value || '';
+    const parts = destinationValue.split('/').map(p => p.trim()).filter(Boolean);
+    const destinationPort = parts[0] || '';
+    const nextPort = parts[1] || '';
+
+    const qccChecked = Array.from(document.querySelectorAll('input[name="qccNames[]"]:checked'))
+        .map(input => input.value);
+
+    let kodeWS = document.getElementById('realisasi-kode-ws')?.value || '';
+    
+    // Auto-fill kodeWS dari schedule jika kosong
+    if (!kodeWS) {
+        const namaKapal = document.getElementById('realisasi-nama-kapal')?.value || '';
+        const voyage = document.getElementById('realisasi-voyage')?.value || '';
+        
+        if (namaKapal && voyage) {
+            const matchedShip = shipSchedulesData.find(ship => 
+                (ship.shipName || '').trim().toUpperCase() === namaKapal.toUpperCase() &&
+                (ship.voyage || '').trim() === voyage.trim()
+            );
+            if (matchedShip) {
+                kodeWS = matchedShip.wsCode || '';
+            }
+        }
+    }
+
+    return {
+        id: document.getElementById('realisasi-id')?.value || '',
+        pelayaran: document.getElementById('realisasi-pelayaran')?.value || '',
+        namaKapal: document.getElementById('realisasi-nama-kapal')?.value || '',
+        kodeKapal: document.getElementById('realisasi-kode-kapal')?.value || '',
+        voyage: document.getElementById('realisasi-voyage')?.value || '',
+        kodeWS: kodeWS,
+        panjangKapal: document.getElementById('realisasi-panjang-kapal')?.value || '',
+        draftKapal: document.getElementById('realisasi-draft-kapal')?.value || '',
+        destinationPort: destinationPort,
+        nextPort: nextPort,
+        startKd: document.getElementById('realisasi-start-kd')?.value || '',
+        endKd: document.getElementById('realisasi-end-kd')?.value || '',
+        mean: document.getElementById('realisasi-mean')?.value || '',
+        statusKapal: document.getElementById('realisasi-status-kapal')?.value || '',
+        berthSide: document.getElementById('realisasi-berth-side')?.value || '',
+        bsh: document.getElementById('realisasi-bsh')?.value || '',
+        etaTime: document.getElementById('realisasi-eta')?.value || '',
+        etbTime: document.getElementById('realisasi-etb')?.value || '',
+        etcTime: document.getElementById('realisasi-etc')?.value || '',
+        etdTime: document.getElementById('realisasi-etd')?.value || '',
+        discharge: document.getElementById('realisasi-discharge')?.value || '',
+        loading: document.getElementById('realisasi-loading')?.value || '',
+        qccNames: qccChecked.length ? qccChecked.join(' & ') : ''
+    };
+}
+
+function formatRealisasiDate(item) {
+    const raw = item.etbTime || item.etaTime || item.created_at || '';
+    const dateObj = new Date(raw);
+    if (Number.isNaN(dateObj.getTime())) return '-';
+    return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(dateObj);
+}
+
+function toLocalInputValue(value) {
+    if (!value) return '';
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) return '';
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+}
+
+function renderRealisasiList(data) {
+    const listBody = document.getElementById('realisasi-list-body');
+    const filterDate = document.getElementById('realisasi-filter-date');
+    const filterMonth = document.getElementById('realisasi-filter-month');
+    if (!listBody) return;
+    let filtered = Array.isArray(data) ? [...data] : [];
+
+    if (filterDate && filterDate.value) {
+        const target = filterDate.value;
+        filtered = filtered.filter(item => {
+            const raw = item.etbTime || item.etaTime || item.created_at || '';
+            if (!raw) return false;
+            const dateObj = new Date(raw);
+            if (Number.isNaN(dateObj.getTime())) return false;
+            const dateKey = dateObj.toISOString().slice(0, 10);
+            return dateKey === target;
+        });
+    }
+
+    if (filterMonth && filterMonth.value) {
+        const targetMonth = filterMonth.value;
+        filtered = filtered.filter(item => {
+            const raw = item.etbTime || item.etaTime || item.created_at || '';
+            if (!raw) return false;
+            const dateObj = new Date(raw);
+            if (Number.isNaN(dateObj.getTime())) return false;
+            const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+            return monthKey === targetMonth;
+        });
+    }
+
+    if (!filtered.length) {
+        listBody.innerHTML = '<tr><td colspan="4" style="padding: 10px; color: #666;">Belum ada data realisasi.</td></tr>';
+        return;
+    }
+
+    listBody.innerHTML = filtered.map(item => {
+        const ship = item.namaKapal || '-';
+        const voyage = item.voyage || '-';
+        const ws = item.kodeWS || item.kodeKapal || '-';
+        const dateLabel = formatRealisasiDate(item);
+        return `
+            <tr data-id="${item.id}">
+                <td style="padding: 8px; cursor: pointer;">${ship}</td>
+                <td style="padding: 8px; cursor: pointer;">${voyage}</td>
+                <td style="padding: 8px; cursor: pointer;">${ws}</td>
+                <td style="padding: 8px; cursor: pointer;">${dateLabel}</td>
+            </tr>
+        `;
+    }).join('');
+
+    Array.from(listBody.querySelectorAll('tr')).forEach(row => {
+        row.addEventListener('click', () => {
+            const id = row.getAttribute('data-id');
+            const item = filtered.find(entry => String(entry.id) === String(id));
+            if (item) {
+                listBody.querySelectorAll('tr').forEach(tr => tr.classList.remove('realisasi-row-selected'));
+                row.classList.add('realisasi-row-selected');
+                fillRealisasiForm(item);
+            }
+        });
+    });
+    
+    // Refresh dropdown suggestions setelah render list
+    const input = document.getElementById('realisasi-nama-kapal');
+    if (input) {
+        showSuggestions(input.value);
+    }
+}
+
+function clearRealisasiRowSelection() {
+    const listBody = document.getElementById('realisasi-list-body');
+    if (!listBody) return;
+    listBody.querySelectorAll('tr').forEach(row => row.classList.remove('realisasi-row-selected'));
+}
+
+function fillRealisasiForm(item) {
+    const setValue = (id, value) => {
+        const input = document.getElementById(id);
+        if (input) input.value = value ?? '';
+    };
+
+    setValue('realisasi-id', item.id || '');
+    setValue('realisasi-pelayaran', item.pelayaran || '');
+    setValue('realisasi-nama-kapal', item.namaKapal || '');
+    setValue('realisasi-kode-kapal', item.kodeKapal || '');
+    setValue('realisasi-voyage', item.voyage || '');
+    setValue('realisasi-kode-ws', item.kodeWS || '');
+    setValue('realisasi-panjang-kapal', item.panjangKapal || '');
+    setValue('realisasi-draft-kapal', item.draftKapal || '');
+
+    const destinationValue = [item.destinationPort, item.nextPort].filter(Boolean).join(' / ');
+    setValue('realisasi-destination-port', destinationValue);
+
+    setValue('realisasi-start-kd', item.startKd || '');
+    setValue('realisasi-end-kd', item.endKd || '');
+    setValue('realisasi-mean', item.mean || '');
+    setValue('realisasi-status-kapal', item.statusKapal || '');
+    setValue('realisasi-berth-side', item.berthSide || '');
+    setValue('realisasi-bsh', item.bsh || '');
+
+    setValue('realisasi-eta', toLocalInputValue(item.etaTime));
+    setValue('realisasi-etb', toLocalInputValue(item.etbTime));
+    setValue('realisasi-etc', toLocalInputValue(item.etcTime));
+    setValue('realisasi-etd', toLocalInputValue(item.etdTime));
+
+    setValue('realisasi-discharge', item.dischargeValue || item.discharge || '');
+    setValue('realisasi-loading', item.loadValue || item.loading || '');
+
+    const qccValues = String(item.qccNames || '')
+        .split('&')
+        .map(value => value.trim())
+        .filter(Boolean);
+    document.querySelectorAll('input[name="qccNames[]"]').forEach(input => {
+        input.checked = qccValues.includes(input.value);
+    });
+
+    const submitButton = document.getElementById('realisasi-submit-btn');
+    if (submitButton) submitButton.textContent = 'Edit';
+}
+
+async function loadRealisasiData() {
+    try {
+        const response = await fetch(getApiUrl('get_realisasi_data.php'));
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        const data = result.realisasi || [];
+        // Store globally untuk dropdown filter
+        window.currentRealisasiData = data;
+        return data;
+    } catch (error) {
+        console.error('❌ Error loading realisasi data:', error);
+        return [];
+    }
+}
+
+function formatDateLabel(date, granularity, yearLabel) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    if (granularity === 'month') {
+        return new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date);
+    }
+    if (granularity === 'year') {
+        return String(yearLabel || date.getFullYear());
+    }
+    return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short' }).format(date);
+}
+
+function buildShipKeyFromSchedule(ship) {
+    const name = String(ship.shipName || '').trim();
+    const voyage = String(ship.voyage || '').trim();
+    const wsCode = String(ship.wsCode || ship.code || '').trim();
+    return `${name}||${voyage}||${wsCode}`;
+}
+
+function buildShipKeyFromRealisasi(item) {
+    const name = String(item.namaKapal || '').trim();
+    const voyage = String(item.voyage || '').trim();
+    const codeValue = String(item.kodeWS || item.kodeKapal || '').trim();
+    return `${name}||${voyage}||${codeValue}`;
+}
+
+function getSelectedMonthIndex() {
+    const monthMap = {
+        'Januari': 0,
+        'Februari': 1,
+        'Maret': 2,
+        'April': 3,
+        'Mei': 4,
+        'Juni': 5,
+        'Juli': 6,
+        'Agustus': 7,
+        'September': 8,
+        'Oktober': 9,
+        'November': 10,
+        'Desember': 11
+    };
+
+    const monthSelect = document.getElementById('chart-month');
+    const selected = monthSelect ? monthSelect.value : '';
+    if (selected in monthMap) return monthMap[selected];
+    return new Date().getMonth();
+}
+
+function getSelectedYear() {
+    const yearSelect = document.getElementById('chart-year');
+    const selected = yearSelect ? Number(yearSelect.value) : NaN;
+    return Number.isFinite(selected) ? selected : new Date().getFullYear();
+}
+
+function getWeekCountForMonth(year, monthIndex) {
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    return Math.ceil(daysInMonth / 7);
+}
+
+function updateWeekOptions() {
+    const select = document.getElementById('chart-periode');
+    if (!select) return;
+    const year = getSelectedYear();
+    const monthIndex = getSelectedMonthIndex();
+    const weekCount = getWeekCountForMonth(year, monthIndex);
+    const currentValue = select.value;
+    select.innerHTML = Array.from({ length: weekCount }, (_, i) => `<option>Minggu ${i + 1}</option>`).join('');
+    if (currentValue) {
+        const match = currentValue.match(/Minggu\s+(\d+)/i);
+        const index = match ? Number(match[1]) : 1;
+        const safeIndex = Math.min(Math.max(index, 1), weekCount);
+        select.value = `Minggu ${safeIndex}`;
+    }
+}
+
+function handleChartMonthChange() {
+    chartUserChanged = true;
+    if (currentChartPeriode === 'minggu') {
+        updateWeekOptions();
+    }
+    updateEvalChart();
+}
+
+function handleChartYearChange() {
+    chartUserChanged = true;
+    if (currentChartPeriode === 'minggu') {
+        updateWeekOptions();
+    }
+    updateEvalChart();
+}
+
+function ensureChartMonthDefault() {
+    const monthSelect = document.getElementById('chart-month');
+    if (!monthSelect) return;
+    if (monthSelect.dataset.initialized === 'true') return;
+    const now = new Date();
+    const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    if (monthNames[now.getMonth()]) {
+        monthSelect.value = monthNames[now.getMonth()];
+    }
+    monthSelect.dataset.initialized = 'true';
+    if (currentChartPeriode === 'minggu') {
+        updateWeekOptions();
+    }
+}
+
+function ensureChartYearDefault() {
+    const yearSelect = document.getElementById('chart-year');
+    if (!yearSelect) return;
+    if (yearSelect.dataset.initialized === 'true') return;
+    const now = new Date();
+    const yearOptions = Array.from(yearSelect.options).map(option => option.value);
+    if (yearOptions.includes(String(now.getFullYear()))) {
+        yearSelect.value = String(now.getFullYear());
+    }
+    yearSelect.dataset.initialized = 'true';
+}
+
+function syncChartSelectorsToDate(dateObj) {
+    if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return;
+    const yearSelect = document.getElementById('chart-year');
+    if (yearSelect) {
+        const yearValue = String(dateObj.getFullYear());
+        const hasOption = Array.from(yearSelect.options).some(option => option.value === yearValue);
+        if (hasOption) yearSelect.value = yearValue;
+    }
+
+    const monthSelect = document.getElementById('chart-month');
+    if (monthSelect) {
+        const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+        const monthName = monthNames[dateObj.getMonth()];
+        if (monthName) monthSelect.value = monthName;
+    }
+
+    if (currentChartPeriode === 'minggu') {
+        updateWeekOptions();
+        const weekSelect = document.getElementById('chart-periode');
+        if (weekSelect) {
+            const weekIndex = Math.floor((dateObj.getDate() - 1) / 7) + 1;
+            const optionValue = `Minggu ${weekIndex}`;
+            const hasOption = Array.from(weekSelect.options).some(option => option.value === optionValue);
+            if (hasOption) weekSelect.value = optionValue;
+        }
+    }
+}
+
+function getDateRange() {
+    const now = new Date();
+    const periodeSelect = document.getElementById('chart-periode');
+    const selected = periodeSelect ? periodeSelect.value : '';
+    const monthIndex = getSelectedMonthIndex();
+    const selectedYear = getSelectedYear();
+
+    if (currentChartPeriode === 'minggu') {
+        const weekMatch = selected.match(/Minggu\s+(\d+)/i);
+        const weekIndex = weekMatch ? Number(weekMatch[1]) : 1;
+        const firstOfMonth = new Date(selectedYear, monthIndex, 1);
+        const start = new Date(firstOfMonth);
+        start.setDate(firstOfMonth.getDate() + (weekIndex - 1) * 7);
+        const end = new Date(start);
+        const lastOfMonth = new Date(selectedYear, monthIndex + 1, 0);
+        end.setDate(start.getDate() + 6);
+        if (end > lastOfMonth) end.setTime(lastOfMonth.getTime());
+        return { start, end };
+    }
+
+    if (currentChartPeriode === 'bulan') {
+        const start = new Date(selectedYear, monthIndex, 1);
+        const end = new Date(selectedYear, monthIndex + 1, 0);
+        return { start, end };
+    }
+
+    if (currentChartPeriode === 'tahun') {
+        const year = selectedYear || now.getFullYear();
+        const start = new Date(year, 0, 1);
+        const end = new Date(year, 11, 31);
+        return { start, end };
+    }
+
+    return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
+}
+
+function buildLabelKeys(range, granularity) {
+    const labels = [];
+    const keys = [];
+    const cursor = new Date(range.start);
+    if (granularity === 'month') {
+        cursor.setDate(1);
+    }
+
+    while (cursor <= range.end) {
+        if (granularity === 'month') {
+            const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+            labels.push(formatDateLabel(cursor, 'month'));
+            keys.push(key);
+            cursor.setMonth(cursor.getMonth() + 1);
+            cursor.setDate(1);
+            continue;
+        }
+
+        const key = getLocalDateKey(cursor);
+        labels.push(formatDateLabel(cursor, 'day'));
+        keys.push(key);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return { labels, keys };
+}
+
+function getLocalDateKey(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getLocalMonthKey(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
+
+function populateChartShipOptions(shipSchedules, realisasiData) {
+    const select = document.getElementById('chart-ship');
+    if (!select) return;
+
+    const currentValue = select.value;
+    const uniqueKeys = new Map();
+    const realisasiKeys = new Set();
+    const scheduleKeys = new Set();
+
+    // Build set of realisasi keys
+    if (Array.isArray(realisasiData)) {
+        realisasiData.forEach(item => {
+            realisasiKeys.add(buildShipKeyFromRealisasi(item));
+        });
+    }
+
+    // Build set of schedule keys dan only add if also in realisasi
+    shipSchedules.forEach(ship => {
+        const key = buildShipKeyFromSchedule(ship);
+        scheduleKeys.add(key);
+        // Only add to uniqueKeys if it exists in BOTH schedule and realisasi
+        if (!uniqueKeys.has(key) && realisasiKeys.has(key)) {
+            uniqueKeys.set(key, ship);
+        }
+    });
+
+    select.innerHTML = '<option value="">Pilih kapal...</option>';
+    uniqueKeys.forEach((ship, key) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${ship.shipName || '-'} • Voyage: ${ship.voyage || '-'} • WS: ${ship.wsCode || ship.code || '-'}`;
+        select.appendChild(option);
+    });
+
+    if (currentValue && uniqueKeys.has(currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+function changeChartPeriode(periode, event) {
+    currentChartPeriode = periode;
+    chartUserChanged = true;
+    
+    // Update active chip
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Update periode selector visibility
+    const periodeSelector = document.getElementById('periode-selector');
+    const bulanSelector = document.getElementById('periode-bulan-selector');
+    const tahunSelector = document.getElementById('periode-tahun-selector');
+    if (periodeSelector) {
+        const label = periodeSelector.querySelector('label');
+        const select = periodeSelector.querySelector('select');
+
+        if (periode === 'minggu') {
+            label.textContent = 'Pilih Minggu:';
+            updateWeekOptions();
+            if (bulanSelector) bulanSelector.style.display = 'flex';
+            if (tahunSelector) tahunSelector.style.display = 'flex';
+            periodeSelector.style.display = 'flex';
+        } else if (periode === 'bulan') {
+            if (bulanSelector) bulanSelector.style.display = 'flex';
+            if (tahunSelector) tahunSelector.style.display = 'flex';
+            periodeSelector.style.display = 'none';
+        } else if (periode === 'tahun') {
+            if (bulanSelector) bulanSelector.style.display = 'none';
+            if (tahunSelector) tahunSelector.style.display = 'flex';
+            periodeSelector.style.display = 'none';
+        }
+    }
+
+    updateEvalChart();
+}
+
+function updateEvalChart() {
+    chartUserChanged = true;
+    if (currentEvalChartBongkar) {
+        currentEvalChartBongkar.destroy();
+    }
+    if (currentEvalChartMuat) {
+        currentEvalChartMuat.destroy();
+    }
+    initEvalChart();
+}
+
+async function initEvalChart() {
+    const bongkarCtx = document.getElementById('bongkarChart');
+    const muatCtx = document.getElementById('muatChart');
+    if (!bongkarCtx || !muatCtx) return;
+
+    ensureChartMonthDefault();
+    ensureChartYearDefault();
+
+    const scheduleResponse = await fetch(getApiUrl('get_all_data.php'));
+    const scheduleResult = scheduleResponse.ok ? await scheduleResponse.json() : { shipSchedules: [] };
+    const shipSchedules = scheduleResult.shipSchedules || [];
+
+    const realisasiData = await loadRealisasiData();
+    populateChartShipOptions(shipSchedules, realisasiData);
+
+    const shipSelect = document.getElementById('chart-ship');
+    let selectedKey = shipSelect?.value || '';
+    if (!selectedKey && shipSelect && shipSelect.options.length > 1) {
+        selectedKey = shipSelect.options[1].value;
+        shipSelect.value = selectedKey;
+    }
+    if (!selectedKey) {
+        const emptyConfig = {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: { responsive: true, maintainAspectRatio: false }
+        };
+        currentEvalChartBongkar = new Chart(bongkarCtx, emptyConfig);
+        currentEvalChartMuat = new Chart(muatCtx, emptyConfig);
+        return;
+    }
+
+    let range = getDateRange();
+    const granularity = currentChartPeriode === 'tahun' ? 'month' : 'day';
+
+    const scheduleForShip = shipSchedules.filter(ship => {
+        const key = buildShipKeyFromSchedule(ship);
+        if (key !== selectedKey) return false;
+        const etb = new Date(ship.startTime);
+        return !Number.isNaN(etb.getTime());
+    });
+
+    const realisasiForShip = realisasiData.filter(item => {
+        if (buildShipKeyFromRealisasi(item) !== selectedKey) return false;
+        const raw = item.etbTime || item.etaTime || item.created_at || '';
+        const dateObj = new Date(raw);
+        return !Number.isNaN(dateObj.getTime());
+    });
+
+    let scheduleFiltered = shipSchedules.filter(ship => {
+        const key = buildShipKeyFromSchedule(ship);
+        if (key !== selectedKey) return false;
+        const etb = new Date(ship.startTime);
+        if (Number.isNaN(etb.getTime())) return false;
+        return etb >= range.start && etb <= range.end;
+    });
+
+    const hasRealisasiInRange = realisasiForShip.some(item => {
+        const raw = item.etbTime || item.etaTime || item.created_at || '';
+        const dateObj = new Date(raw);
+        if (Number.isNaN(dateObj.getTime())) return false;
+        return dateObj >= range.start && dateObj <= range.end;
+    });
+
+    if (!scheduleFiltered.length && !hasRealisasiInRange) {
+        // Keep user selections; do not auto-sync dropdowns.
+    }
+
+    if (currentChartPeriode === 'minggu') {
+        const start = new Date(range.start);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        range = { start, end };
+    }
+
+    const scheduleMap = new Map();
+    scheduleFiltered.forEach(ship => {
+        const etb = new Date(ship.startTime);
+        if (Number.isNaN(etb.getTime())) return;
+        if (etb < range.start || etb > range.end) return;
+        const key = granularity === 'month'
+            ? getLocalMonthKey(etb)
+            : getLocalDateKey(etb);
+        const current = scheduleMap.get(key) || { discharge: 0, loading: 0 };
+        current.discharge += Number(ship.dischargeValue || 0);
+        current.loading += Number(ship.loadValue || 0);
+        scheduleMap.set(key, current);
+    });
+
+    const realisasiMap = new Map();
+    realisasiData.forEach(item => {
+        if (buildShipKeyFromRealisasi(item) !== selectedKey) return;
+        const etb = item.etbTime || item.etaTime || '';
+        const dateObj = new Date(etb);
+        if (Number.isNaN(dateObj.getTime())) return;
+        if (dateObj < range.start || dateObj > range.end) return;
+        const key = granularity === 'month'
+            ? getLocalMonthKey(dateObj)
+            : getLocalDateKey(dateObj);
+
+        const current = realisasiMap.get(key) || { discharge: 0, loading: 0 };
+        current.discharge += Number(item.dischargeValue || item.discharge || 0);
+        current.loading += Number(item.loadValue || item.loading || 0);
+        realisasiMap.set(key, current);
+    });
+
+    const { labels, keys } = buildLabelKeys(range, granularity);
+    const targetDischarge = keys.map(key => scheduleMap.get(key)?.discharge ?? null);
+    const targetLoad = keys.map(key => scheduleMap.get(key)?.loading ?? null);
+    const realDischarge = keys.map(key => realisasiMap.get(key)?.discharge ?? null);
+    const realLoad = keys.map(key => realisasiMap.get(key)?.loading ?? null);
+
+    const createChartOptions = (chartType) => {
+        const periodLabel = currentChartPeriode === 'minggu'
+            ? ' - Mingguan'
+            : currentChartPeriode === 'bulan'
+                ? ' - Bulanan'
+                : ' - Tahunan';
+        
+        const yAxisTitle = chartType === 'bongkar'
+            ? 'Jumlah Bongkar (TEUs' + periodLabel + ')'
+            : 'Jumlah Muat (TEUs' + periodLabel + ')';
+        
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 12, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { size: 12 }, color: '#666666' },
+                    title: {
+                        display: true,
+                        text: yAxisTitle
+                    },
+                    grid: { color: 'rgba(224, 224, 224, 0.5)', drawBorder: false }
+                },
+                x: {
+                    ticks: { font: { size: 12 }, color: '#666666' },
+                    title: {
+                        display: true,
+                        text: currentChartPeriode === 'minggu'
+                            ? 'Tanggal (Bulan)'
+                            : currentChartPeriode === 'bulan'
+                                ? 'Tanggal (Bulan)'
+                                : 'Bulan (Tahun)'
+                    },
+                    grid: { display: false, drawBorder: false }
+                }
+            }
+        };
+    };
+
+    const expandSinglePoint = (data) => {
+        const indexes = data
+            .map((value, index) => (value === null || value === undefined) ? null : index)
+            .filter(index => index !== null);
+        if (indexes.length !== 1 || data.length < 2) return data;
+        const idx = indexes[0];
+        const expanded = [...data];
+        if (idx > 0) {
+            expanded[idx - 1] = expanded[idx];
+        } else if (idx < expanded.length - 1) {
+            expanded[idx + 1] = expanded[idx];
+        }
+        return expanded;
+    };
+
+    const targetDischargeSeries = expandSinglePoint(targetDischarge);
+    const targetLoadSeries = expandSinglePoint(targetLoad);
+    const realDischargeSeries = expandSinglePoint(realDischarge);
+    const realLoadSeries = expandSinglePoint(realLoad);
+
+    const countNonNull = (arr) => arr.filter(value => value !== null && value !== undefined).length;
+    const targetDischargePoints = countNonNull(targetDischargeSeries);
+    const realDischargePoints = countNonNull(realDischargeSeries);
+    const targetLoadPoints = countNonNull(targetLoadSeries);
+    const realLoadPoints = countNonNull(realLoadSeries);
+
+    const bongkarData = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Target Bongkar',
+                data: targetDischargeSeries,
+                borderColor: '#e53935',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                fill: false,
+                tension: 0.4,
+                pointRadius: targetDischargePoints <= 1 ? 5 : 3,
+                pointHoverRadius: 5
+            },
+            {
+                label: 'Realisasi Bongkar',
+                data: realDischargeSeries,
+                borderColor: '#4CAF50',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.4,
+                pointRadius: realDischargePoints <= 1 ? 5 : 3,
+                pointHoverRadius: 5
+            }
+        ]
+    };
+
+    const muatData = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Target Muat',
+                data: targetLoadSeries,
+                borderColor: '#e53935',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                fill: false,
+                tension: 0.4,
+                pointRadius: targetLoadPoints <= 1 ? 5 : 3,
+                pointHoverRadius: 5
+            },
+            {
+                label: 'Realisasi Muat',
+                data: realLoadSeries,
+                borderColor: '#2196F3',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.4,
+                pointRadius: realLoadPoints <= 1 ? 5 : 3,
+                pointHoverRadius: 5
+            }
+        ]
+    };
+
+    currentEvalChartBongkar = new Chart(bongkarCtx, {
+        type: 'line',
+        data: bongkarData,
+        options: createChartOptions('bongkar')
+    });
+
+    currentEvalChartMuat = new Chart(muatCtx, {
+        type: 'line',
+        data: muatData,
+        options: createChartOptions('muat')
+    });
+}
+
+// ==================== GRAFIK VIEW FILTERING (NO PAGE SWITCH) ====================
+
+async function toggleFilterWaktu() {
+    const defaultMode = document.getElementById('filter-mode-default');
+    const waktuMode = document.getElementById('filter-mode-waktu');
+    const kapalMode = document.getElementById('filter-mode-kapal');
+    const btnWaktu = document.getElementById('btn-filter-waktu');
+    const btnKapal = document.getElementById('btn-filter-kapal');
+    
+    // Toggle mode
+    if (waktuMode.style.display === 'none') {
+        console.log('Toggling Filter Waktu mode ON');
+        defaultMode.style.display = 'none';
+        waktuMode.style.display = 'block';
+        kapalMode.style.display = 'none';
+        
+        // Update button colors
+        btnWaktu.style.backgroundColor = '#4CAF50';
+        btnWaktu.style.color = 'white';
+        btnKapal.style.backgroundColor = 'white';
+        btnKapal.style.color = 'black';
+        
+        // Populate pelayaran list
+        console.log('Calling populatePelayaranList...');
+        await populatePelayaranList('filter-waktu-pelayaran');
+        console.log('populatePelayaranList completed');
+    } else {
+        console.log('Toggling Filter Waktu mode OFF');
+        // Back to default
+        defaultMode.style.display = 'block';
+        waktuMode.style.display = 'none';
+        kapalMode.style.display = 'none';
+        
+        btnWaktu.style.backgroundColor = 'white';
+        btnWaktu.style.color = 'black';
+        btnKapal.style.backgroundColor = 'white';
+        btnKapal.style.color = 'black';
+    }
+}
+
+function toggleFilterKapal() {
+    const defaultMode = document.getElementById('filter-mode-default');
+    const kapalMode = document.getElementById('filter-mode-kapal');
+    const btnKapal = document.getElementById('btn-filter-kapal');
+    
+    // Toggle mode
+    if (kapalMode.style.display === 'none') {
+        defaultMode.style.display = 'none';
+        kapalMode.style.display = 'block';
+        
+        // Update button color
+        btnKapal.style.backgroundColor = '#2196F3';
+        btnKapal.style.color = 'white';
+        
+        // Populate pelayaran list with checkboxes
+        populatePelayaranListCheckbox();
+    } else {
+        // Back to default
+        defaultMode.style.display = 'block';
+        kapalMode.style.display = 'none';
+        
+        btnKapal.style.backgroundColor = 'white';
+        btnKapal.style.color = 'black';
+    }
+}
+
+async function populatePelayaranList(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) {
+        console.error('Select element not found:', selectId);
+        return;
+    }
+    
+    // Show loading state
+    select.innerHTML = '<option value="">Loading...</option>';
+    
+    try {
+        const response = await fetch(getApiUrl('get_all_data.php'));
+        const result = response.ok ? await response.json() : { shipSchedules: [] };
+        const shipSchedules = result.shipSchedules || [];
+        
+        console.log('Populating pelayaran for:', selectId);
+        console.log('Found ships:', shipSchedules.length);
+        console.log('Sample ship data:', shipSchedules.slice(0, 3));
+        
+        // Get unique company names from ship schedules
+        const pelayaranSet = new Set();
+        shipSchedules.forEach(ship => {
+            if (ship.company && ship.company.trim()) {
+                pelayaranSet.add(ship.company.trim());
+            }
+        });
+        
+        console.log('Companies from schedules:', pelayaranSet.size);
+        
+        // If no companies found from schedules, try shipping_companies table
+        if (pelayaranSet.size === 0) {
+            console.log('No companies in schedules, trying shipping_companies table...');
+            try {
+                const companiesResponse = await fetch(getApiUrl('get_shipping_companies.php'));
+                const companiesResult = await companiesResponse.json();
+                console.log('Shipping companies response:', companiesResult);
+                
+                if (companiesResult.status === 'success' && companiesResult.data) {
+                    companiesResult.data.forEach(company => {
+                        if (company.name && company.name.trim()) {
+                            pelayaranSet.add(company.name.trim());
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching shipping companies:', err);
+            }
+        }
+        
+        console.log('Total unique pelayaran:', pelayaranSet.size, Array.from(pelayaranSet));
+        
+        const sortedPelayaran = Array.from(pelayaranSet).sort();
+        
+        // Reset select with default option
+        select.innerHTML = '<option value="">Semua Pelayaran</option>';
+        
+        // Add sorted list
+        sortedPelayaran.forEach(pelayaran => {
+            const option = document.createElement('option');
+            option.value = pelayaran;
+            option.textContent = pelayaran;
+            select.appendChild(option);
+        });
+        
+        console.log('Pelayaran dropdown populated with', sortedPelayaran.length, 'companies');
+        console.log('Total options in select:', select.options.length);
+    } catch (error) {
+        console.error('Error populating pelayaran list:', error);
+        // Reset to default on error
+        select.innerHTML = '<option value="">Semua Pelayaran</option>';
+    }
+}
+
+function updateWaktuKapalList() {
+    const pelayaran = document.getElementById('filter-waktu-pelayaran').value;
+    const kapalList = document.getElementById('filter-waktu-kapal-list');
+    kapalList.innerHTML = '';
+    
+    if (!pelayaran) {
+        kapalList.innerHTML = '<p style="color: #999; margin: 0;">Pilih pelayaran terlebih dahulu</p>';
+        return;
+    }
+    
+    // Fetch and filter kapal
+    fetch(getApiUrl('get_all_data.php'))
+        .then(r => r.json())
+        .then(result => {
+            const shipSchedules = result.shipSchedules || [];
+            const kapalSet = new Set();
+            
+            shipSchedules.forEach(ship => {
+                if (ship.company === pelayaran && ship.shipName) {
+                    kapalSet.add(ship.shipName);
+                }
+            });
+            
+            if (kapalSet.size === 0) {
+                kapalList.innerHTML = '<p style="color: #999; margin: 0;">Tidak ada kapal untuk pelayaran ini</p>';
+                return;
+            }
+            
+            const sortedKapal = Array.from(kapalSet).sort();
+            kapalList.innerHTML = sortedKapal
+                .map(kapal => `<div style="padding: 8px; border-bottom: 1px solid #eee;">🚢 ${kapal}</div>`)
+                .join('');
+            
+            // Update chart dengan data pelayaran
+            updateWaktuChart();
+        })
+        .catch(err => console.error('Error loading kapal list:', err));
+}
+
+async function updateWaktuChart() {
+    const startDateInput = document.getElementById('filter-waktu-start-date').value;
+    const endDateInput = document.getElementById('filter-waktu-end-date').value;
+    const pelayaran = document.getElementById('filter-waktu-pelayaran').value;
+    
+    // Validate dates
+    if (!startDateInput || !endDateInput) {
+        console.log('Tanggal belum dipilih');
+        return;
+    }
+    
+    try {
+        const startDate = new Date(startDateInput);
+        const endDate = new Date(endDateInput);
+        endDate.setHours(23, 59, 59, 999);
+        
+        // Build labels first (always show x-axis)
+        const { labels, keys } = buildLabelKeys({ start: startDate, end: endDate }, 'day');
+        
+        // If no pelayaran selected, show empty chart
+        if (!pelayaran) {
+            console.log('Pelayaran belum dipilih - showing empty chart');
+            
+            // Render empty Bongkar chart
+            const bongkarCtx = document.getElementById('bongkarChart');
+            if (currentEvalChartBongkar) currentEvalChartBongkar.destroy();
+            
+            currentEvalChartBongkar = new Chart(bongkarCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Jumlah Bongkar (TEUs)' },
+                            grid: { display: false, drawBorder: false }
+                        },
+                        x: {
+                            title: { display: true, text: 'Tanggal' },
+                            grid: { display: false, drawBorder: false }
+                        }
+                    }
+                }
+            });
+            
+            // Render empty Muat chart
+            const muatCtx = document.getElementById('muatChart');
+            if (currentEvalChartMuat) currentEvalChartMuat.destroy();
+            
+            currentEvalChartMuat = new Chart(muatCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Jumlah Muat (TEUs)' },
+                            grid: { display: false, drawBorder: false }
+                        },
+                        x: {
+                            title: { display: true, text: 'Tanggal' },
+                            grid: { display: false, drawBorder: false }
+                        }
+                    }
+                }
+            });
+            
+            return;
+        }
+        
+        // Fetch data
+        const scheduleResponse = await fetch(getApiUrl('get_all_data.php'));
+        const scheduleResult = scheduleResponse.ok ? await scheduleResponse.json() : { shipSchedules: [] };
+        const shipSchedules = scheduleResult.shipSchedules || [];
+        
+        const realisasiResponse = await fetch(getApiUrl('get_realisasi_data.php'));
+        const realisasiResult = realisasiResponse.ok ? await realisasiResponse.json() : { realisasi: [] };
+        const realisasiData = realisasiResult.realisasi || [];
+        
+        // Filter schedules by pelayaran and date range
+        const scheduleFiltered = shipSchedules.filter(ship => {
+            if (ship.company !== pelayaran) return false;
+            const etb = new Date(ship.startTime);
+            if (Number.isNaN(etb.getTime())) return false;
+            return etb >= startDate && etb <= endDate;
+        });
+        
+        // Filter realisasi data by pelayaran and date range
+        const realisasiFiltered = realisasiData.filter(item => {
+            if (item.pelayaran !== pelayaran) return false;
+            const raw = item.etbTime || item.etaTime || '';
+            const dateObj = new Date(raw);
+            if (Number.isNaN(dateObj.getTime())) return false;
+            return dateObj >= startDate && dateObj <= endDate;
+        });
+        
+        // Aggregate by day
+        const scheduleMap = new Map();
+        scheduleFiltered.forEach(ship => {
+            const etb = new Date(ship.startTime);
+            const key = getLocalDateKey(etb);
+            const current = scheduleMap.get(key) || { discharge: 0, loading: 0 };
+            current.discharge += Number(ship.dischargeValue || 0);
+            current.loading += Number(ship.loadValue || 0);
+            scheduleMap.set(key, current);
+        });
+        
+        const realisasiMap = new Map();
+        realisasiFiltered.forEach(item => {
+            const etb = item.etbTime || item.etaTime || '';
+            const dateObj = new Date(etb);
+            const key = getLocalDateKey(dateObj);
+            const current = realisasiMap.get(key) || { discharge: 0, loading: 0 };
+            current.discharge += Number(item.dischargeValue || item.discharge || 0);
+            current.loading += Number(item.loadValue || item.loading || 0);
+            realisasiMap.set(key, current);
+        });
+        
+        // Use already declared labels and keys from earlier
+        const targetDischarge = keys.map(key => scheduleMap.get(key)?.discharge ?? null);
+        const targetLoad = keys.map(key => scheduleMap.get(key)?.loading ?? null);
+        const realDischarge = keys.map(key => realisasiMap.get(key)?.discharge ?? null);
+        const realLoad = keys.map(key => realisasiMap.get(key)?.loading ?? null);
+        
+        // Helper function to expand single points
+        const expandSinglePoint = (data) => {
+            const indexes = data
+                .map((value, index) => (value === null || value === undefined) ? null : index)
+                .filter(index => index !== null);
+            if (indexes.length !== 1 || data.length < 2) return data;
+            const idx = indexes[0];
+            const expanded = [...data];
+            if (idx > 0) {
+                expanded[idx - 1] = expanded[idx];
+            } else if (idx < expanded.length - 1) {
+                expanded[idx + 1] = expanded[idx];
+            }
+            return expanded;
+        };
+        
+        const targetDischargeSeries = expandSinglePoint(targetDischarge);
+        const targetLoadSeries = expandSinglePoint(targetLoad);
+        const realDischargeSeries = expandSinglePoint(realDischarge);
+        const realLoadSeries = expandSinglePoint(realLoad);
+        
+        // Create chart options
+        const createChartOptions = (chartType) => {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: chartType === 'bongkar'
+                                ? 'Jumlah Bongkar (TEUs)'
+                                : 'Jumlah Muat (TEUs)'
+                        },
+                        grid: { display: false, drawBorder: false }
+                    },
+                    x: {
+                        title: { display: true, text: 'Tanggal' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            };
+        };
+        
+        // Render Bongkar chart
+        const bongkarCtx = document.getElementById('bongkarChart');
+        if (currentEvalChartBongkar) currentEvalChartBongkar.destroy();
+        
+        const bongkarData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Target Bongkar',
+                    data: targetDischargeSeries,
+                    borderColor: '#e53935',
+                    borderWidth: 2,
+                    borderDash: [4, 4],
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                },
+                {
+                    label: 'Realisasi Bongkar',
+                    data: realDischargeSeries,
+                    borderColor: '#43a047',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ]
+        };
+        
+        currentEvalChartBongkar = new Chart(bongkarCtx, {
+            type: 'line',
+            data: bongkarData,
+            options: createChartOptions('bongkar')
+        });
+        
+        // Render Muat chart
+        const muatCtx = document.getElementById('muatChart');
+        if (currentEvalChartMuat) currentEvalChartMuat.destroy();
+        
+        const muatData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Target Muat',
+                    data: targetLoadSeries,
+                    borderColor: '#e53935',
+                    borderWidth: 2,
+                    borderDash: [4, 4],
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                },
+                {
+                    label: 'Realisasi Muat',
+                    data: realLoadSeries,
+                    borderColor: '#1e88e5',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ]
+        };
+        
+        currentEvalChartMuat = new Chart(muatCtx, {
+            type: 'line',
+            data: muatData,
+            options: createChartOptions('muat')
+        });
+    } catch (error) {
+        console.error('Error updating waktu chart:', error);
+    }
+}
+
+async function populatePelayaranListCheckbox() {
+    try {
+        const response = await fetch(getApiUrl('get_all_data.php'));
+        const result = response.ok ? await response.json() : { shipSchedules: [] };
+        const shipSchedules = result.shipSchedules || [];
+        const pelayaranSet = new Set();
+        shipSchedules.forEach(ship => {
+            if (ship.company && ship.company.trim()) {
+                pelayaranSet.add(ship.company.trim());
+            }
+        });
+        const pelayaranList = document.getElementById('filter-kapal-pelayaran-list');
+        if (!pelayaranList) return;
+        const sortedPelayaran = Array.from(pelayaranSet).sort();
+        pelayaranList.innerHTML = sortedPelayaran.map(pelayaran => `
+            <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                <label style="display: flex; align-items: center; margin: 0; cursor: pointer;">
+                    <input type="checkbox" value="${pelayaran}" class="filter-kapal-pelayaran-checkbox" onchange="updateKapalListCheckbox()" />
+                    <span style="margin-left: 8px;">🚢 ${pelayaran}</span>
+                </label>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error populating pelayaran list:', error);
+    }
+}
+
+function updateKapalListCheckbox() {
+    const pelayaranCheckboxes = document.querySelectorAll('.filter-kapal-pelayaran-checkbox:checked');
+    const selectedPelayaran = Array.from(pelayaranCheckboxes).map(cb => cb.value);
+    const kapalList = document.getElementById('filter-kapal-list');
+    kapalList.innerHTML = '';
+    if (selectedPelayaran.length === 0) {
+        kapalList.innerHTML = '<p style="color: #999; margin: 0;">Pilih pelayaran terlebih dahulu</p>';
+        document.getElementById('filter-kapal-all').checked = false;
+        return;
+    }
+    fetch(getApiUrl('get_all_data.php'))
+        .then(r => r.json())
+        .then(result => {
+            const shipSchedules = result.shipSchedules || [];
+            const kapalSet = new Set();
+            shipSchedules.forEach(ship => {
+                if (selectedPelayaran.includes(ship.company) && ship.shipName) {
+                    kapalSet.add(ship.shipName);
+                }
+            });
+            if (kapalSet.size === 0) {
+                kapalList.innerHTML = '<p style="color: #999; margin: 0;">Tidak ada kapal untuk pelayaran yang dipilih</p>';
+                document.getElementById('filter-kapal-all').checked = false;
+                return;
+            }
+            const sortedKapal = Array.from(kapalSet).sort();
+            kapalList.innerHTML = sortedKapal.map(kapal => `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <label style="display: flex; align-items: center; margin: 0; cursor: pointer;">
+                        <input type="checkbox" value="${kapal}" class="filter-kapal-kapal-checkbox" onchange="handleKapalFiltering()" />
+                        <span style="margin-left: 8px;">🚢 ${kapal}</span>
+                    </label>
+                </div>
+            `).join('');
+            document.getElementById('filter-kapal-all').checked = false;
+        })
+        .catch(err => console.error('Error loading kapal list:', err));
+}
+
+function toggleAllKapal() {
+    const allCheckbox = document.getElementById('filter-kapal-all');
+    const kapalCheckboxes = document.querySelectorAll('.filter-kapal-kapal-checkbox');
+    kapalCheckboxes.forEach(cb => {
+        cb.checked = allCheckbox.checked;
+    });
+    handleKapalFiltering();
+}
+
+function toggleAllPelayaran() {
+    const allCheckbox = document.getElementById('filter-kapal-all-pelayaran');
+    const pelayaranCheckboxes = document.querySelectorAll('.filter-kapal-pelayaran-checkbox');
+    pelayaranCheckboxes.forEach(cb => {
+        cb.checked = allCheckbox.checked;
+    });
+    updateKapalListCheckbox();
+    // Jangan panggil handleKapalFiltering() di sini
+    // Biarkan user memilih kapal terlebih dahulu
+}
+
+function updateMingguselector() {
+    const yearDisplay = document.getElementById('minggu-year-picker-display');
+    const monthSelect = document.getElementById('filter-kapal-minggu-bulan');
+    const mingguSelect = document.getElementById('filter-kapal-minggu');
+    
+    const year = Number(yearDisplay?.textContent);
+    const month = Number(monthSelect?.value);
+    
+    // Clear and reset week dropdown
+    mingguSelect.innerHTML = '';
+    
+    if (!year || !month) return;
+    
+    // Calculate weeks in the month
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+    const weeksInMonth = Math.ceil(daysInMonth / 7);
+    
+    // Populate weeks
+    for (let i = 1; i <= weeksInMonth; i++) {
+        const option = document.createElement('option');
+        option.value = `${i}`;
+        option.textContent = `Minggu ${i}`;
+        mingguSelect.appendChild(option);
+    }
+}
+
+function handleKapalFiltering() {
+    chartUserChanged = true;
+    updateKapalChart();
+}
+
+function clearKapalCharts() {
+    const bongkarCtx = document.getElementById('bongkarChart');
+    const muatCtx = document.getElementById('muatChart');
+    
+    if (currentEvalChartBongkar) {
+        currentEvalChartBongkar.destroy();
+        currentEvalChartBongkar = null;
+    }
+    
+    if (currentEvalChartMuat) {
+        currentEvalChartMuat.destroy();
+        currentEvalChartMuat = null;
+    }
+    
+    // Render empty charts
+    if (bongkarCtx && muatCtx) {
+        const emptyConfig = {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        };
+        currentEvalChartBongkar = new Chart(bongkarCtx, emptyConfig);
+        currentEvalChartMuat = new Chart(muatCtx, emptyConfig);
+    }
+}
+
+async function updateKapalChart() {
+    const periodo = document.querySelector('#filter-mode-kapal .chip.active')?.textContent?.trim().toLowerCase() || 'bulan';
+    
+    // Get selected pelayaran
+    const pelayaranCheckboxes = document.querySelectorAll('.filter-kapal-pelayaran-checkbox:checked');
+    const selectedPelayaran = Array.from(pelayaranCheckboxes).map(cb => cb.value);
+    
+    // Get selected kapal
+    const allKapalCheckbox = document.getElementById('filter-kapal-all');
+    const kapalCheckboxes = document.querySelectorAll('.filter-kapal-kapal-checkbox:checked');
+    const selectedKapal = Array.from(kapalCheckboxes).map(cb => cb.value);
+    
+    // Validasi: Pelayaran harus dipilih
+    if (selectedPelayaran.length === 0) {
+        console.log('Pilih pelayaran terlebih dahulu');
+        // Clear charts
+        clearKapalCharts();
+        return;
+    }
+    
+    // Validasi: Kapal harus dipilih (checkbox "Semua Kapal" atau minimal 1 kapal)
+    if (!allKapalCheckbox.checked && selectedKapal.length === 0) {
+        console.log('Pilih kapal terlebih dahulu');
+        // Clear charts
+        clearKapalCharts();
+        return;
+    }
+    
+    try {
+        // Fetch data
+        const scheduleResponse = await fetch(getApiUrl('get_all_data.php'));
+        const scheduleResult = scheduleResponse.ok ? await scheduleResponse.json() : { shipSchedules: [] };
+        const shipSchedules = scheduleResult.shipSchedules || [];
+        
+        const realisasiResponse = await fetch(getApiUrl('get_realisasi_data.php'));
+        const realisasiResult = realisasiResponse.ok ? await realisasiResponse.json() : { realisasi: [] };
+        const realisasiData = realisasiResult.realisasi || [];
+        
+        // Get date range based on periodo selection
+        let range;
+        const now = new Date();
+        
+        if (periodo === 'minggu') {
+            const weekSelect = document.getElementById('filter-kapal-minggu');
+            const monthSelect = document.getElementById('filter-kapal-minggu-bulan');
+            const yearDisplay = document.getElementById('minggu-year-picker-display');
+            
+            const weekMatch = weekSelect?.value.match(/(\d+)/);
+            const weekIndex = weekMatch ? Number(weekMatch[1]) : 1;
+            const selectedMonth = Number(monthSelect?.value) || 0;
+            const selectedYear = Number(yearDisplay?.textContent) || now.getFullYear();
+            
+            if (selectedMonth === 0 || !monthSelect?.value) {
+                console.log('Pilih bulan dan minggu');
+                return;
+            }
+            
+            const firstOfMonth = new Date(selectedYear, selectedMonth - 1, 1);
+            const start = new Date(firstOfMonth);
+            start.setDate(firstOfMonth.getDate() + (weekIndex - 1) * 7);
+            const end = new Date(start);
+            const lastOfMonth = new Date(selectedYear, selectedMonth, 0);
+            end.setDate(start.getDate() + 6);
+            if (end > lastOfMonth) end.setTime(lastOfMonth.getTime());
+            range = { start, end };
+        } else if (periodo === 'bulan') {
+            const monthSelect = document.getElementById('filter-kapal-bulan');
+            const yearDisplay = document.getElementById('bulan-year-picker-display');
+            
+            const selectedMonth = Number(monthSelect?.value) || 0;
+            const selectedYear = Number(yearDisplay?.textContent) || now.getFullYear();
+            
+            if (selectedMonth === 0 || !monthSelect?.value) {
+                console.log('Pilih bulan dan tahun');
+                return;
+            }
+            
+            const start = new Date(selectedYear, selectedMonth - 1, 1);
+            const end = new Date(selectedYear, selectedMonth, 0);
+            range = { start, end };
+        } else {
+            // tahun
+            const yearDisplay = document.getElementById('filter-kapal-tahun-display');
+            const selectedYear = Number(yearDisplay?.textContent) || now.getFullYear();
+            
+            if (!yearDisplay?.textContent) {
+                console.log('Pilih tahun');
+                return;
+            }
+            
+            const start = new Date(selectedYear, 0, 1);
+            const end = new Date(selectedYear, 11, 31);
+            range = { start, end };
+        }
+        
+        // Filter schedules by pelayaran/kapal and date range
+        let scheduleFiltered = shipSchedules.filter(ship => {
+            if (!selectedPelayaran.includes(ship.company)) return false;
+            // If kapal selected (not "semua kapal"), filter by kapal
+            if (!allKapalCheckbox.checked && selectedKapal.length > 0 && !selectedKapal.includes(ship.shipName)) return false;
+            const etb = new Date(ship.startTime);
+            if (Number.isNaN(etb.getTime())) return false;
+            return etb >= range.start && etb <= range.end;
+        });
+        
+        // Filter realisasi data by pelayaran/kapal and date range
+        let realisasiFiltered = realisasiData.filter(item => {
+            if (!selectedPelayaran.includes(item.pelayaran)) return false;
+            // If kapal selected (not "semua kapal"), filter by kapal
+            if (!allKapalCheckbox.checked && selectedKapal.length > 0 && !selectedKapal.includes((item.shipName || item.kapal))) return false;
+            const raw = item.etbTime || item.etaTime || '';
+            const dateObj = new Date(raw);
+            if (Number.isNaN(dateObj.getTime())) return false;
+            return dateObj >= range.start && dateObj <= range.end;
+        });
+        
+        // Aggregate by period
+        const granularity = periodo === 'tahun' ? 'month' : 'day';
+        const scheduleMap = new Map();
+        scheduleFiltered.forEach(ship => {
+            const etb = new Date(ship.startTime);
+            const key = granularity === 'month' ? getLocalMonthKey(etb) : getLocalDateKey(etb);
+            const current = scheduleMap.get(key) || { discharge: 0, loading: 0 };
+            current.discharge += Number(ship.dischargeValue || 0);
+            current.loading += Number(ship.loadValue || 0);
+            scheduleMap.set(key, current);
+        });
+        
+        const realisasiMap = new Map();
+        realisasiFiltered.forEach(item => {
+            const etb = item.etbTime || item.etaTime || '';
+            const dateObj = new Date(etb);
+            const key = granularity === 'month' ? getLocalMonthKey(dateObj) : getLocalDateKey(dateObj);
+            const current = realisasiMap.get(key) || { discharge: 0, loading: 0 };
+            current.discharge += Number(item.dischargeValue || item.discharge || 0);
+            current.loading += Number(item.loadValue || item.loading || 0);
+            realisasiMap.set(key, current);
+        });
+        
+        // Build labels and data with correct date range
+        const { labels, keys } = buildLabelKeys(range, granularity);
+        const targetDischarge = keys.map(key => scheduleMap.get(key)?.discharge ?? null);
+        const targetLoad = keys.map(key => scheduleMap.get(key)?.loading ?? null);
+        const realDischarge = keys.map(key => realisasiMap.get(key)?.discharge ?? null);
+        const realLoad = keys.map(key => realisasiMap.get(key)?.loading ?? null);
+        
+        // Helper to expand single point
+        const expandSinglePoint = (data) => {
+            const indexes = data.map((v, i) => (v !== null && v !== undefined ? i : null)).filter(i => i !== null);
+            if (indexes.length !== 1 || data.length < 2) return data;
+            const idx = indexes[0];
+            const expanded = [...data];
+            if (idx > 0) expanded[idx - 1] = expanded[idx];
+            else if (idx < expanded.length - 1) expanded[idx + 1] = expanded[idx];
+            return expanded;
+        };
+        
+        const targetDischargeSeries = expandSinglePoint(targetDischarge);
+        const targetLoadSeries = expandSinglePoint(targetLoad);
+        const realDischargeSeries = expandSinglePoint(realDischarge);
+        const realLoadSeries = expandSinglePoint(realLoad);
+        
+        // Create chart options
+        const createChartOptions = (chartType) => {
+            const periodLabel = periodo === 'minggu' ? ' - Mingguan' : periodo === 'bulan' ? ' - Bulanan' : ' - Tahunan';
+            const yAxisTitle = chartType === 'bongkar' ? 'Jumlah Bongkar (TEUs' + periodLabel + ')' : 'Jumlah Muat (TEUs' + periodLabel + ')';
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12, titleFont: { size: 12, weight: 'bold' }, bodyFont: { size: 12 } }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: yAxisTitle }, grid: { display: false, drawBorder: false } },
+                    x: { title: { display: true, text: granularity === 'month' ? 'Bulan' : 'Tanggal' }, grid: { display: false, drawBorder: false } }
+                }
+            };
+        };
+        
+        // Render Bongkar chart
+        const bongkarCtx = document.getElementById('bongkarChart');
+        if (currentEvalChartBongkar) currentEvalChartBongkar.destroy();
+        
+        currentEvalChartBongkar = new Chart(bongkarCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Target Bongkar', data: targetDischargeSeries, borderColor: '#e53935', borderWidth: 2, borderDash: [4, 4], fill: false, pointRadius: 3, pointBackgroundColor: '#e53935' },
+                    { label: 'Realisasi Bongkar', data: realDischargeSeries, borderColor: '#e53935', borderWidth: 2.5, fill: false, pointRadius: 3, pointBackgroundColor: '#e53935' }
+                ]
+            },
+            options: createChartOptions('bongkar')
+        });
+        
+        // Render Muat chart
+        const muatCtx = document.getElementById('muatChart');
+        if (currentEvalChartMuat) currentEvalChartMuat.destroy();
+        
+        currentEvalChartMuat = new Chart(muatCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Target Muat', data: targetLoadSeries, borderColor: '#2196F3', borderWidth: 2, borderDash: [4, 4], fill: false, pointRadius: 3, pointBackgroundColor: '#2196F3' },
+                    { label: 'Realisasi Muat', data: realLoadSeries, borderColor: '#2196F3', borderWidth: 2.5, fill: false, pointRadius: 3, pointBackgroundColor: '#2196F3' }
+                ]
+            },
+            options: createChartOptions('muat')
+        });
+    } catch (error) {
+        console.error('Error updating kapal chart:', error);
+    }
+}
+
+function getMonthIndexFromName(monthName) {
+    const monthMap = {
+        'Januari': 0,
+        'Februari': 1,
+        'Maret': 2,
+        'April': 3,
+        'Mei': 4,
+        'Juni': 5,
+        'Juli': 6,
+        'Agustus': 7,
+        'September': 8,
+        'Oktober': 9,
+        'November': 10,
+        'Desember': 11
+    };
+    return monthMap[monthName] ?? 0;
+}
+
+function selectKapal(kapalName) {
+    if (event && event.target) {
+        event.target.style.backgroundColor = '#e3f2fd';
+    }
+}
+
+function changeFilterKapalPeriode(periode, event) {
+    // Update active chip
+    document.querySelectorAll('#filter-mode-kapal .chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update periode selectors visibility
+    const minggSelector = document.getElementById('filter-kapal-minggu-selector');
+    const bulanSelector = document.getElementById('filter-kapal-bulan-selector');
+    const tahunSelector = document.getElementById('filter-kapal-tahun-selector');
+    
+    if (periode === 'minggu') {
+        minggSelector.style.display = 'flex';
+        bulanSelector.style.display = 'none';
+        tahunSelector.style.display = 'none';
+    } else if (periode === 'bulan') {
+        minggSelector.style.display = 'none';
+        bulanSelector.style.display = 'flex';
+        tahunSelector.style.display = 'none';
+    } else if (periode === 'tahun') {
+        minggSelector.style.display = 'none';
+        bulanSelector.style.display = 'none';
+        tahunSelector.style.display = 'flex';
+    }
+    
+    // Update chart when periode changes
+    updateKapalChart();
+}
+
+function handleWaktuFilterChange() {
+    // Update charts when filter changes in Filter Rentang Waktu mode
+    const waktuMode = document.getElementById('filter-mode-waktu');
+    if (waktuMode && waktuMode.style.display !== 'none') {
+        updateWaktuChart();
+    }
+}
+
+function handleKapalFilterChange() {
+    // Update charts when filter changes in Filter Pelayaran & Kapal mode
+    chartUserChanged = true;
+    updateKapalChart();
+}
+
+// ==================== REALISASI KAPAL AUTO-FILL ====================
+let shipSchedulesData = [];
+let selectedSuggestionIndex = -1;
+
+// Load ship schedules dari API
+async function loadShipSchedules() {
+    try {
+        console.log('🔄 Loading ship schedules...');
+        const response = await fetch(getApiUrl('get_all_data.php'));
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result && result.shipSchedules && Array.isArray(result.shipSchedules)) {
+            shipSchedulesData = result.shipSchedules;
+            console.log(`✅ Loaded ${shipSchedulesData.length} ship schedules`);
+            console.log('📋 Ship data:', shipSchedulesData);
+        } else {
+            console.error('❌ No ship schedules found');
+            shipSchedulesData = [];
+        }
+    } catch (error) {
+        console.error('❌ Error loading ship schedules:', error);
+        shipSchedulesData = [];
+    }
+}
+
+// Show suggestions dropdown
+async function showSuggestions(filterText = '') {
+    const input = document.getElementById('realisasi-nama-kapal');
+    const dropdown = document.getElementById('realisasi-suggestions');
+    
+    if (!dropdown) return;
+    
+    console.log('🔍 Filtering with:', filterText);
+    console.log('📦 Total ships:', shipSchedulesData.length);
+    
+    // Load realisasi data if not already loaded
+    if (!window.currentRealisasiData) {
+        await loadRealisasiData();
+    }
+    
+    // Get existing realisasi data to exclude from suggestions
+    const realisasiData = window.currentRealisasiData || [];
+    const existingRealisasiKeys = new Set(
+        realisasiData.map(item => buildShipKeyFromRealisasi(item))
+    );
+    
+    console.log('📋 Existing realisasi count:', existingRealisasiKeys.size);
+    
+    // Filter shipSchedulesData to exclude ships that already have realisasi data
+    let filtered = shipSchedulesData.filter(ship => {
+        const shipKey = buildShipKeyFromSchedule(ship);
+        return !existingRealisasiKeys.has(shipKey);
+    });
+    
+    // Further filter by text input
+    if (filterText.trim()) {
+        filtered = filtered.filter(ship =>
+            ship.shipName && ship.shipName.toUpperCase().includes(filterText.toUpperCase())
+        );
+    }
+    
+    console.log('📋 Filtered results (excluding existing realisasi):', filtered.length);
+    
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="suggestion-item" style="text-align: center; color: #999;">Tidak ada kapal yang tersedia</div>';
+        dropdown.classList.add('show');
+        return;
+    }
+    
+    dropdown.innerHTML = filtered.map((ship, index) => {
+        const shipKey = buildShipKeyFromSchedule(ship);
+        const shipName = ship.shipName || '-';
+        const voyage = ship.voyage || '-';
+        const wsCode = ship.wsCode || ship.code || '-';
+        return `
+        <div class="suggestion-item" data-index="${index}" data-key="${shipKey}" onclick="selectShip('${shipKey}')">
+            <div class="ship-name">${shipName}</div>
+            <div class="ship-info">Voyage: ${voyage} • WS: ${wsCode}</div>
+        </div>
+    `;
+    }).join('');
+    
+    dropdown.classList.add('show');
+    selectedSuggestionIndex = -1;
+}
+
+// Hide suggestions dropdown
+function hideSuggestions() {
+    const dropdown = document.getElementById('realisasi-suggestions');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+        dropdown.innerHTML = '';
+    }
+}
+
+// Select ship from dropdown
+function selectShip(shipKey) {
+    const input = document.getElementById('realisasi-nama-kapal');
+    const ship = shipSchedulesData.find(s => buildShipKeyFromSchedule(s) === shipKey);
+    if (input && ship) {
+        input.value = ship.shipName || '';
+    }
+
+    autoFillForm(shipKey);
+    hideSuggestions();
+}
+
+// Auto-fill form dengan data kapal
+function autoFillForm(shipKey) {
+    const ship = shipSchedulesData.find(s => buildShipKeyFromSchedule(s) === shipKey);
+    
+    console.log('🚢 Selected ship:', ship);
+    
+    if (!ship) {
+        console.warn('⚠️ Ship not found');
+        clearAutoFillFields();
+        return;
+    }
+    
+    // Fill all auto-fill fields
+    const pelayaranSelect = document.getElementById('realisasi-pelayaran');
+    const pelayaranValue = ship.company || '';
+    if (pelayaranSelect) {
+        const hasOption = Array.from(pelayaranSelect.options).some(option => option.value === pelayaranValue || option.text === pelayaranValue);
+        if (pelayaranValue && !hasOption) {
+            const option = document.createElement('option');
+            option.value = pelayaranValue;
+            option.textContent = pelayaranValue;
+            pelayaranSelect.appendChild(option);
+        }
+        pelayaranSelect.value = pelayaranValue;
+    }
+    document.getElementById('realisasi-kode-kapal').value = ship.code || '';
+    document.getElementById('realisasi-voyage').value = ship.voyage || '';
+    document.getElementById('realisasi-kode-ws').value = ship.wsCode || '';
+    document.getElementById('realisasi-panjang-kapal').value = ship.length || '';
+    document.getElementById('realisasi-draft-kapal').value = ship.draft || '';
+
+    const destinationPort = ship.destPort || '';
+    const nextPort = ship.nextPort || '';
+    document.getElementById('realisasi-destination-port').value = nextPort
+        ? `${destinationPort} / ${nextPort}`
+        : destinationPort;
+
+    const startKdValue = ship.startKd || ship.minKd || '';
+    const endKdValue = ship.nKd || '';
+    document.getElementById('realisasi-start-kd').value = startKdValue;
+    document.getElementById('realisasi-end-kd').value = endKdValue;
+
+    let meanValue = ship.mean;
+    if (meanValue === null || meanValue === undefined || meanValue === '') {
+        const startNum = Number(startKdValue);
+        const endNum = Number(endKdValue);
+        if (startKdValue !== '' && endKdValue !== '' && Number.isFinite(startNum) && Number.isFinite(endNum)) {
+            meanValue = ((startNum + endNum) / 2).toFixed(2).replace(/\.00$/, '');
+        }
+    }
+    document.getElementById('realisasi-mean').value = meanValue || '';
+    document.getElementById('realisasi-status-kapal').value = ship.status || '';
+    
+    // Convert berthSide code to display value
+    let berthValue = ship.berthSide || '';
+    if (berthValue === 'P') berthValue = 'Port Side';
+    else if (berthValue === 'S') berthValue = 'Starboard Side';
+    document.getElementById('realisasi-berth-side').value = berthValue;
+    
+    console.log('✅ Form auto-filled');
+}
+
+// Clear auto-fill fields
+function clearAutoFillFields() {
+    const fields = [
+        'realisasi-pelayaran', 'realisasi-kode-kapal', 'realisasi-voyage',
+        'realisasi-kode-ws', 'realisasi-panjang-kapal', 'realisasi-draft-kapal',
+        'realisasi-destination-port', 'realisasi-start-kd', 'realisasi-end-kd',
+        'realisasi-mean', 'realisasi-status-kapal', 'realisasi-berth-side'
+    ];
+    
+    fields.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.value = '';
+    });
+}
+
+// Setup realisasi form listeners
+function setupRealisasiListeners() {
+    const input = document.getElementById('realisasi-nama-kapal');
+    const dropdown = document.getElementById('realisasi-suggestions');
+    
+    if (!input) return;
+    
+    // Load data when page opens
+    loadShipSchedules();
+    
+    // Show all suggestions on focus
+    input.addEventListener('focus', () => {
+        showSuggestions(input.value);
+    });
+    
+    // Filter suggestions on input
+    input.addEventListener('input', (e) => {
+        showSuggestions(e.target.value);
+    });
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
+            updateActiveItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+            updateActiveItem(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedSuggestionIndex >= 0 && items[selectedSuggestionIndex]) {
+                const shipKey = items[selectedSuggestionIndex].dataset.key;
+                if (shipKey) {
+                    selectShip(shipKey);
+                }
+            }
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+}
+
+function updateActiveItem(items) {
+    items.forEach((item, index) => {
+        if (index === selectedSuggestionIndex) {
+            item.classList.add('active');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+// Initialize realisasi listeners on page load
+document.addEventListener('DOMContentLoaded', () => {
+    setupRealisasiListeners();
+});
+
+// Update navigateToPage to load data when entering realisasi
+const originalNavigateToPage = navigateToPage;
+navigateToPage = function(page) {
+    originalNavigateToPage.call(this, page);
+    
+    if (page === 'realisasi') {
+        setTimeout(() => {
+            loadShipSchedules();
+        }, 100);
+    }
+};
+

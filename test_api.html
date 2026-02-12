@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test API Response</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        h2 { color: #4ec9b0; border-bottom: 2px solid #4ec9b0; padding-bottom: 5px; }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        pre { background: #252526; padding: 15px; border-radius: 4px; overflow-x: auto; border-left: 3px solid #007acc; }
+        .endpoint { background: #2d2d30; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { background: #007acc; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; margin: 5px; }
+        button:hover { background: #005a9e; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Response Test</h1>
+    
+    <div class="endpoint">
+        <h2>1. Test get_all_data.php</h2>
+        <button onclick="testGetAllData()">Test Endpoint</button>
+        <div id="result1"></div>
+    </div>
+
+    <div class="endpoint">
+        <h2>2. Test get_realisasi_data.php</h2>
+        <button onclick="testGetRealisasi()">Test Endpoint</button>
+        <div id="result2"></div>
+    </div>
+
+    <script>
+        async function testGetAllData() {
+            const div = document.getElementById('result1');
+            div.innerHTML = '<p>⏳ Fetching...</p>';
+            
+            try {
+                const response = await fetch('get_all_data.php');
+                const contentType = response.headers.get('content-type');
+                const rawText = await response.text();
+                
+                div.innerHTML = `
+                    <h3>Response Headers:</h3>
+                    <pre>Status: ${response.status}
+Content-Type: ${contentType}</pre>
+                    
+                    <h3>Raw Response (first 1000 chars):</h3>
+                    <pre>${escapeHtml(rawText.substring(0, 1000))}</pre>
+                `;
+                
+                try {
+                    const json = JSON.parse(rawText);
+                    div.innerHTML += `<p class="success">✓ Valid JSON response!</p>`;
+                    div.innerHTML += `<pre>${JSON.stringify(json, null, 2).substring(0, 2000)}</pre>`;
+                } catch (e) {
+                    div.innerHTML += `<p class="error">✗ JSON Parse Error: ${e.message}</p>`;
+                    div.innerHTML += `<p class="error">First character code: ${rawText.charCodeAt(0)}</p>`;
+                }
+            } catch (error) {
+                div.innerHTML = `<p class="error">✗ Fetch Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testGetRealisasi() {
+            const div = document.getElementById('result2');
+            div.innerHTML = '<p>⏳ Fetching...</p>';
+            
+            try {
+                const response = await fetch('get_realisasi_data.php');
+                const contentType = response.headers.get('content-type');
+                const rawText = await response.text();
+                
+                div.innerHTML = `
+                    <h3>Response Headers:</h3>
+                    <pre>Status: ${response.status}
+Content-Type: ${contentType}</pre>
+                    
+                    <h3>Raw Response (first 1000 chars):</h3>
+                    <pre>${escapeHtml(rawText.substring(0, 1000))}</pre>
+                `;
+                
+                try {
+                    const json = JSON.parse(rawText);
+                    div.innerHTML += `<p class="success">✓ Valid JSON response!</p>`;
+                    div.innerHTML += `<pre>${JSON.stringify(json, null, 2).substring(0, 2000)}</pre>`;
+                } catch (e) {
+                    div.innerHTML += `<p class="error">✗ JSON Parse Error: ${e.message}</p>`;
+                    div.innerHTML += `<p class="error">First character code: ${rawText.charCodeAt(0)}</p>`;
+                }
+            } catch (error) {
+                div.innerHTML = `<p class="error">✗ Fetch Error: ${error.message}</p>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto test on load
+        window.addEventListener('load', () => {
+            testGetAllData();
+            setTimeout(testGetRealisasi, 500);
+        });
+    </script>
+</body>
+</html>

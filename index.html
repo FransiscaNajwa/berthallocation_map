@@ -64,6 +64,10 @@
                 </div>
 
                 <button id="clear-data-btn" class="btn btn-warning" title="Hapus Semua Data"><i class="fas fa-trash-alt"></i></button>
+                
+                <!-- Tombol Evaluasi WS -->
+                <button id="btn-realisasi" class="btn btn-success" onclick="navigateToPage('realisasi')"><i class="fas fa-clipboard-list"></i> Realisasi</button>
+                <button id="btn-grafik" class="btn btn-info" onclick="navigateToPage('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
             </div>
         </header>
 
@@ -240,11 +244,13 @@
                         <label for="start-kd">Start KD:</label>
                         <input type="number" id="start-kd" name="startKd" placeholder="Contoh: 330" min="330" max="650" step="5" required>
                     </div>
+                    <!-- Hidden field untuk N-KD (akan otomatis diisi dengan panjang kapal) -->
+                    <input type="hidden" id="n-kd" name="nKd">
                     <div class="form-group">
-                        <label for="n-kd">End KD:</label> <input type="number" id="n-kd" name="nKd" placeholder="Ex: 500" readonly>
+                        <label for="end-kd-display">End KD:</label> <input type="number" id="end-kd-display" placeholder="Ex: 735" readonly style="background-color: #f0f0f0;">
                     </div>
                     <div class="form-group">
-                        <label for="min-kd">Mean:</label> <input type="number" id="min-kd" name="minKd" placeholder="Ex: 650" readonly>
+                        <label for="min-kd">Mean:</label> <input type="number" id="min-kd" name="minKd" placeholder="Ex: 650" readonly style="background-color: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label for="ship-bsh">BSH:</label>
@@ -513,8 +519,808 @@
         </div>
 
     </div>
+
+    <!-- ==================== HALAMAN REALISASI ==================== -->
+    <div id="realisasi-page" class="evaluasi-page" style="display: none;">
+        <div class="evaluasi-container">
+            <button class="btn-back-simple" onclick="navigateToPage('ba-map')">
+                <i class="fas fa-arrow-left"></i> Kembali ke BA MAP
+            </button>
+            <div class="card">
+                <div class="card-header">📋 Tambah Realisasi Kapal</div>
+                <div class="card-content">
+                    <form id="realisasi-form">
+                        <input type="hidden" id="realisasi-id" name="id">
+                        <!-- Row 1: Pelayaran and Nama Kapal -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Pelayaran</label>
+                                <select id="realisasi-pelayaran" name="pelayaran" readonly>
+                                    <option value="">-</option>
+                                    <option>MERATUS</option>
+                                    <option>SPIL</option>
+                                    <option>TANTO</option>
+                                    <option>CTP</option>
+                                    <option>PPNP</option>
+                                </select>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Nama Kapal</label>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="realisasi-nama-kapal" name="namaKapal" placeholder="Ketik atau pilih nama kapal..." autocomplete="off">
+                                    <div id="realisasi-suggestions" class="autocomplete-dropdown"></div>
+                                </div>
+                                <small>Ketik untuk mencari atau klik untuk melihat semua kapal</small>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Kode Kapal, Voyage, Kode WS -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Kode Kapal</label>
+                                <input type="text" id="realisasi-kode-kapal" name="kodeKapal" placeholder="Masukkan Kode Kapal" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Voyage</label>
+                                <input type="text" id="realisasi-voyage" name="voyage" placeholder="Isi Voyage" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Kode WS</label>
+                                <input type="text" id="realisasi-kode-ws" name="kodeWS" placeholder="Isi Kode WS" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: LOA, Draft, Destination Port -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Panjang Kapal (LOA)</label>
+                                <input type="number" id="realisasi-panjang-kapal" name="panjangKapal" placeholder="LOA (meter)" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Draft Kapal</label>
+                                <input type="number" id="realisasi-draft-kapal" name="draftKapal" placeholder="Draft (meter)" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Destination Port / Next Port</label>
+                                <input type="text" id="realisasi-destination-port" name="destinationPort" placeholder="Destination / Next Port" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Start KD, End KD, Mean, BSH -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Start KD</label>
+                                <input type="number" id="realisasi-start-kd" name="startKd" placeholder="Start KD" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>End KD</label>
+                                <input type="number" id="realisasi-end-kd" name="endKd" placeholder="End KD" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Mean</label>
+                                <input type="number" id="realisasi-mean" name="mean" placeholder="Mean" readonly>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>BSH</label>
+                                <input type="number" id="realisasi-bsh" name="bsh" placeholder="BSH">
+                                <small>Input manual nilai BSH</small>
+                            </div>
+                        </div>
+
+                        <!-- Row 5: ETA and ETB -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>ETA (Estimated Time of Arrival)</label>
+                                <input type="datetime-local" id="realisasi-eta" name="etaTime">
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>ETB (Estimated Time of Berthing)</label>
+                                <input type="datetime-local" id="realisasi-etb" name="etbTime">
+                            </div>
+                        </div>
+
+                        <!-- Row 6: ETC and ETD -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>ETC (Estimated Time of Completion)</label>
+                                <input type="datetime-local" id="realisasi-etc" name="etcTime">
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>ETD (Estimated Time of Departure)</label>
+                                <input type="datetime-local" id="realisasi-etd" name="etdTime">
+                            </div>
+                        </div>
+
+                        <!-- Row 7: Discharge and Loading -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Discharge (TEUS)</label>
+                                <input type="number" id="realisasi-discharge" name="discharge" placeholder="Jumlah TEUS Bongkar">
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Loading (TEUS)</label>
+                                <input type="number" id="realisasi-loading" name="loading" placeholder="Jumlah TEUS Muat">
+                            </div>
+                        </div>
+
+                        <!-- Row 8: Status Kapal and Berth Side -->
+                        <div class="form-row-eval">
+                            <div class="form-group-eval">
+                                <label>Status Kapal</label>
+                                <input type="text" id="realisasi-status-kapal" name="statusKapal" readonly placeholder="-">
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+
+                            <div class="form-group-eval">
+                                <label>Berth Side</label>
+                                <select id="realisasi-berth-side" name="berthSide" readonly>
+                                    <option value="">-</option>
+                                    <option>Port Side</option>
+                                    <option>Starboard Side</option>
+                                </select>
+                                <small>Akan terisi otomatis dari BA MAP</small>
+                            </div>
+                        </div>
+
+                        <!-- QCC Checkboxes -->
+                        <div class="form-group-eval">
+                            <label>Capture QCC</label>
+                            <div class="qcc-container">
+                                <label class="qcc-checkbox">
+                                    <input type="checkbox" name="qccNames[]" value="QCC01"> QCC01
+                                </label>
+                                <label class="qcc-checkbox">
+                                    <input type="checkbox" name="qccNames[]" value="QCC02"> QCC02
+                                </label>
+                                <label class="qcc-checkbox">
+                                    <input type="checkbox" name="qccNames[]" value="QCC03"> QCC03
+                                </label>
+                                <label class="qcc-checkbox">
+                                    <input type="checkbox" name="qccNames[]" value="QCC04"> QCC04
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-eval-submit" id="realisasi-submit-btn">Submit</button>
+                    </form>
+
+                    <div class="form-row-eval" style="margin-top: 20px;">
+                        <button type="button" id="btn-realisasi-list" class="btn btn-info">
+                            <i class="fas fa-list"></i> Lihat Data Realisasi
+                        </button>
+                    </div>
+
+                    <div id="realisasi-list" style="display: none; margin-top: 15px;">
+                        <div class="form-row-eval" style="margin-bottom: 10px;">
+                            <div class="form-group-eval">
+                                <label>Filter Tanggal</label>
+                                <input type="date" id="realisasi-filter-date">
+                            </div>
+                            <div class="form-group-eval">
+                                <label>Filter Bulan</label>
+                                <input type="month" id="realisasi-filter-month">
+                            </div>
+                            <div class="form-group-eval" style="align-self: flex-end;">
+                                <button type="button" class="btn btn-secondary" id="realisasi-filter-clear">Reset Filter</button>
+                            </div>
+                        </div>
+                        <table class="comm-log-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; padding: 8px;">Kapal</th>
+                                    <th style="text-align: left; padding: 8px;">Voyage</th>
+                                    <th style="text-align: left; padding: 8px;">Kode WS</th>
+                                    <th style="text-align: left; padding: 8px;">Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="realisasi-list-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN GRAFIK ==================== -->
+    <div id="grafik-page" class="evaluasi-page" style="display: none;">
+        <div class="evaluasi-container">
+            <button class="btn-back-simple" onclick="navigateToPage('ba-map')">
+                <i class="fas fa-arrow-left"></i> Kembali ke BA MAP
+            </button>
+            <div class="card">
+                <div class="card-header">📊 Grafik Analisis</div>
+                <div class="card-content">
+                    <!-- DEFAULT MODE: Minggu/Bulan/Tahun Chips -->
+                    <div id="filter-mode-default" style="display: none;">
+                        <div class="filter-chips">
+                            <button class="chip active" onclick="changeChartPeriode('minggu', event)">Minggu</button>
+                            <button class="chip" onclick="changeChartPeriode('bulan', event)">Bulan</button>
+                            <button class="chip" onclick="changeChartPeriode('tahun', event)">Tahun</button>
+                        </div>
+
+                        <!-- Ship Selector -->
+                        <div class="filter-row-eval">
+                            <label>Pilih Kapal:</label>
+                            <select id="chart-ship">
+                                <option value="">Pilih kapal...</option>
+                            </select>
+                        </div>
+
+                        <!-- Period Selectors -->
+                        <div class="filter-row-eval" id="periode-selector">
+                            <label>Pilih Minggu:</label>
+                            <select id="chart-periode">
+                                <option>Minggu 1</option>
+                                <option>Minggu 2</option>
+                                <option>Minggu 3</option>
+                                <option>Minggu 4</option>
+                                <option>Minggu 5</option>
+                            </select>
+                        </div>
+                        <div class="filter-row-eval" id="periode-bulan-selector">
+                            <label>Pilih Bulan:</label>
+                            <select id="chart-month">
+                                <option>Januari</option>
+                                <option>Februari</option>
+                                <option>Maret</option>
+                                <option>April</option>
+                                <option>Mei</option>
+                                <option>Juni</option>
+                                <option>Juli</option>
+                                <option>Agustus</option>
+                                <option>September</option>
+                                <option>Oktober</option>
+                                <option>November</option>
+                                <option>Desember</option>
+                            </select>
+                        </div>
+                        <div class="filter-row-eval" id="periode-tahun-selector">
+                            <label>Pilih Tahun:</label>
+                            <select id="chart-year">
+                                <option>2024</option>
+                                <option selected>2025</option>
+                                <option>2026</option>
+                                <option>2027</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- FILTER PELAYARAN & KAPAL MODE -->
+                    <div id="filter-mode-kapal" style="display: block;">
+                        <div class="filter-chips">
+                            <button class="chip active" data-periode="tahun" onclick="changeFilterKapalPeriode('tahun', event)">Tahun</button>
+                            <button class="chip" data-periode="bulan" onclick="changeFilterKapalPeriode('bulan', event)">Bulan</button>
+                            <button class="chip" data-periode="minggu" onclick="changeFilterKapalPeriode('minggu', event)">Minggu</button>
+                        </div>
+
+                        <div class="filter-row-eval" id="filter-kapal-minggu-selector" style="display: none;">
+                            <label>Pilih Minggu:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <div id="minggu-year-picker-container" style="position: relative; width: 120px;">
+                                    <div id="minggu-year-picker-display" style="
+                                        border: 1px solid #ccc;
+                                        padding: 10px 15px;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        text-align: center;
+                                        background: white;
+                                        font-weight: 500;
+                                        font-size: 14px;
+                                    ">2026</div>
+                                    
+                                    <div id="minggu-year-picker-popup" style="
+                                        display: none;
+                                        position: absolute;
+                                        top: 100%;
+                                        left: 0;
+                                        background: white;
+                                        border: 1px solid #ddd;
+                                        border-radius: 4px;
+                                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                        padding: 15px;
+                                        min-width: 280px;
+                                        z-index: 1000;
+                                        margin-top: 5px;
+                                    ">
+                                        <div style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                            margin-bottom: 15px;
+                                            padding-bottom: 10px;
+                                            border-bottom: 1px solid #eee;
+                                        ">
+                                            <button id="minggu-year-picker-prev" style="
+                                                background: none;
+                                                border: none;
+                                                font-size: 18px;
+                                                cursor: pointer;
+                                                padding: 0;
+                                                width: 30px;
+                                            ">◀</button>
+                                            <span id="minggu-year-picker-header" style="
+                                                font-weight: bold;
+                                                font-size: 14px;
+                                            ">1980 - 1989</span>
+                                            <button id="minggu-year-picker-next" style="
+                                                background: none;
+                                                border: none;
+                                                font-size: 18px;
+                                                cursor: pointer;
+                                                padding: 0;
+                                                width: 30px;
+                                            ">▶</button>
+                                        </div>
+                                        
+                                        <div id="minggu-year-picker-grid" style="
+                                            display: grid;
+                                            grid-template-columns: repeat(5, 1fr);
+                                            gap: 8px;
+                                        "></div>
+                                    </div>
+                                </div>
+                                <select id="filter-kapal-minggu-bulan" onchange="updateMingguselector()" style="flex: 0 0 140px;">
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <select id="filter-kapal-minggu" onchange="handleKapalFilterChange()" style="flex: 1;">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="filter-row-eval" id="filter-kapal-bulan-selector" style="display: none;">
+                            <label>Pilih Bulan:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <div id="bulan-year-picker-container" style="position: relative; width: 120px;">
+                                    <div id="bulan-year-picker-display" style="
+                                        border: 1px solid #ccc;
+                                        padding: 10px 15px;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                        text-align: center;
+                                        background: white;
+                                        font-weight: 500;
+                                        font-size: 14px;
+                                    ">2026</div>
+                                    
+                                    <div id="bulan-year-picker-popup" style="
+                                        display: none;
+                                        position: absolute;
+                                        top: 100%;
+                                        left: 0;
+                                        background: white;
+                                        border: 1px solid #ddd;
+                                        border-radius: 4px;
+                                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                        padding: 15px;
+                                        min-width: 280px;
+                                        z-index: 1000;
+                                        margin-top: 5px;
+                                    ">
+                                        <div style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                            margin-bottom: 15px;
+                                            padding-bottom: 10px;
+                                            border-bottom: 1px solid #eee;
+                                        ">
+                                            <button id="bulan-year-picker-prev" style="
+                                                background: none;
+                                                border: none;
+                                                font-size: 18px;
+                                                cursor: pointer;
+                                                padding: 0;
+                                                width: 30px;
+                                            ">◀</button>
+                                            <span id="bulan-year-picker-header" style="
+                                                font-weight: bold;
+                                                font-size: 14px;
+                                            ">1980 - 1989</span>
+                                            <button id="bulan-year-picker-next" style="
+                                                background: none;
+                                                border: none;
+                                                font-size: 18px;
+                                                cursor: pointer;
+                                                padding: 0;
+                                                width: 30px;
+                                            ">▶</button>
+                                        </div>
+                                        
+                                        <div id="bulan-year-picker-grid" style="
+                                            display: grid;
+                                            grid-template-columns: repeat(5, 1fr);
+                                            gap: 8px;
+                                        "></div>
+                                    </div>
+                                </div>
+                                <select id="filter-kapal-bulan" onchange="handleKapalFilterChange()" style="flex: 1;">
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="filter-row-eval" id="filter-kapal-tahun-selector">
+                            <label>Pilih Tahun:</label>
+                            <div id="year-picker-container" style="position: relative; width: fit-content;">
+                                <div id="filter-kapal-tahun-display" style="
+                                    border: 1px solid #ccc;
+                                    padding: 10px 15px;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    min-width: 150px;
+                                    text-align: center;
+                                    background: white;
+                                    font-weight: 500;
+                                ">2026</div>
+                                
+                                <div id="year-picker-popup" style="
+                                    display: none;
+                                    position: absolute;
+                                    top: 100%;
+                                    left: 0;
+                                    background: white;
+                                    border: 1px solid #ddd;
+                                    border-radius: 4px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                    padding: 15px;
+                                    min-width: 280px;
+                                    z-index: 1000;
+                                    margin-top: 5px;
+                                ">
+                                    <div style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        margin-bottom: 15px;
+                                        padding-bottom: 10px;
+                                        border-bottom: 1px solid #eee;
+                                    ">
+                                        <button id="year-picker-prev" style="
+                                            background: none;
+                                            border: none;
+                                            font-size: 18px;
+                                            cursor: pointer;
+                                            padding: 0;
+                                            width: 30px;
+                                        ">◀</button>
+                                        <span id="year-picker-header" style="
+                                            font-weight: bold;
+                                            font-size: 14px;
+                                        ">1980 - 1989</span>
+                                        <button id="year-picker-next" style="
+                                            background: none;
+                                            border: none;
+                                            font-size: 18px;
+                                            cursor: pointer;
+                                            padding: 0;
+                                            width: 30px;
+                                        ">▶</button>
+                                    </div>
+                                    
+                                    <div id="year-picker-grid" style="
+                                        display: grid;
+                                        grid-template-columns: repeat(5, 1fr);
+                                        gap: 8px;
+                                    "></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-row-eval">
+                            <label>Pilih Pelayaran:</label>
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <label style="flex: 1; margin: 0;">
+                                    <input type="checkbox" id="filter-kapal-all-pelayaran" onchange="toggleAllPelayaran()" />
+                                    <span style="margin-left: 5px;">Semua Pelayaran</span>
+                                </label>
+                            </div>
+                            <div id="filter-kapal-pelayaran-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
+                                <p style="color: #999; margin: 0;">Loading...</p>
+                            </div>
+                        </div>
+
+                        <div class="filter-row-eval">
+                            <label>Pilih Kapal:</label>
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <label style="flex: 1; margin: 0;">
+                                    <input type="checkbox" id="filter-kapal-all" onchange="toggleAllKapal()" />
+                                    <span style="margin-left: 5px;">Semua Kapal</span>
+                                </label>
+                            </div>
+                            <div id="filter-kapal-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
+                                <p style="color: #999; margin: 0;">Pilih pelayaran terlebih dahulu</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="chart-container-eval">
+                        <canvas id="bongkarChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-line dashed red"></div>
+                            <span>Target Bongkar</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line solid green"></div>
+                            <span>Realisasi Bongkar</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container-eval">
+                        <canvas id="muatChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-line dashed red"></div>
+                            <span>Target Muat</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line solid blue"></div>
+                            <span>Realisasi Muat</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Auto-populate pelayaran list on page load since filter mode is now default
+        window.addEventListener('DOMContentLoaded', function() {
+            populatePelayaranListCheckbox();
+            populateYearOptions();
+            setCurrentDateToDropdowns();
+        });
+        
+        // Dynamically populate year options for all selectors
+        function populateYearOptions() {
+            // All year pickers are now handled by initYearPicker()
+            // This function is kept for compatibility
+        }
+        
+        // Set dropdowns to current date on page load
+        function setCurrentDateToDropdowns() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1; // 1-12
+            const currentDay = today.getDate();
+            const currentWeek = Math.ceil(currentDay / 7);
+            
+            // Initialize all year pickers
+            initYearPicker('tahun', currentYear);
+            initYearPicker('bulan', currentYear);
+            initYearPicker('minggu', currentYear);
+            
+            // Set Bulan selector (month)
+            const bulanSelect = document.getElementById('filter-kapal-bulan');
+            if (bulanSelect) {
+                bulanSelect.value = currentMonth;
+            }
+            
+            // Set Minggu selector (month, then week after populating)
+            const mingguBulanSelect = document.getElementById('filter-kapal-minggu-bulan');
+            const mingguSelect = document.getElementById('filter-kapal-minggu');
+            
+            if (mingguBulanSelect) {
+                mingguBulanSelect.value = currentMonth;
+            }
+            
+            // Populate minggu dropdown based on current month/year
+            updateMingguselector();
+            
+            // Set current week after minggu dropdown is populated
+            if (mingguSelect) {
+                setTimeout(() => {
+                    mingguSelect.value = currentWeek;
+                }, 0);
+            }
+        }
+        
+        // Year Picker Implementation
+        let yearPickerState = {};
+        
+        function initYearPicker(pickerType = 'tahun', selectedYear = 2026) {
+            const display = document.getElementById(`${pickerType}-year-picker-display`) || document.getElementById('filter-kapal-tahun-display');
+            const popup = document.getElementById(`${pickerType}-year-picker-popup`) || document.getElementById('year-picker-popup');
+            const grid = document.getElementById(`${pickerType}-year-picker-grid`) || document.getElementById('year-picker-grid');
+            const prevBtn = document.getElementById(`${pickerType}-year-picker-prev`) || document.getElementById('year-picker-prev');
+            const nextBtn = document.getElementById(`${pickerType}-year-picker-next`) || document.getElementById('year-picker-next');
+            const header = document.getElementById(`${pickerType}-year-picker-header`) || document.getElementById('year-picker-header');
+            
+            if (!display || !popup) return;
+            
+            // Initialize state for this picker
+            yearPickerState[pickerType] = {
+                selectedYear: selectedYear,
+                decade: Math.floor(selectedYear / 10) * 10
+            };
+            
+            // Set initial display
+            display.textContent = selectedYear;
+            
+            // Stop propagation when clicking inside popup
+            popup.addEventListener('click', (e) => e.stopPropagation());
+            
+            // Toggle popup on display click
+            display.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+                renderYearPicker(pickerType);
+            });
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', () => {
+                popup.style.display = 'none';
+            });
+            
+            // Navigation buttons
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    yearPickerState[pickerType].decade -= 10;
+                    renderYearPicker(pickerType);
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    yearPickerState[pickerType].decade += 10;
+                    renderYearPicker(pickerType);
+                });
+            }
+            
+            // Initial render
+            renderYearPicker(pickerType);
+        }
+        
+        function renderYearPicker(pickerType = 'tahun') {
+            const state = yearPickerState[pickerType];
+            if (!state) return;
+            
+            const grid = document.getElementById(`${pickerType}-year-picker-grid`) || document.getElementById('year-picker-grid');
+            const header = document.getElementById(`${pickerType}-year-picker-header`) || document.getElementById('year-picker-header');
+            const display = document.getElementById(`${pickerType}-year-picker-display`) || document.getElementById('filter-kapal-tahun-display');
+            const popup = document.getElementById(`${pickerType}-year-picker-popup`) || document.getElementById('year-picker-popup');
+            const currentYear = parseInt(display.textContent);
+            
+            const endYear = state.decade + 9;
+            header.textContent = `${state.decade} - ${endYear}`;
+            
+            grid.innerHTML = '';
+            
+            for (let year = state.decade; year <= endYear; year++) {
+                const btn = document.createElement('button');
+                btn.textContent = year;
+                btn.style.cssText = `
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    background: ${year === currentYear ? '#1e88e5' : 'white'};
+                    color: ${year === currentYear ? 'white' : '#333'};
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: ${year === currentYear ? 'bold' : 'normal'};
+                    transition: all 0.2s;
+                `;
+                
+                btn.addEventListener('click', () => {
+                    display.textContent = year;
+                    popup.style.display = 'none';
+                    state.selectedYear = year;
+                    
+                    // Trigger appropriate update based on picker type
+                    if (pickerType === 'minggu') {
+                        updateMingguselector();
+                    } else {
+                        handleKapalFilterChange();
+                    }
+                });
+                
+                btn.addEventListener('mouseover', () => {
+                    if (year !== currentYear) {
+                        btn.style.background = '#f5f5f5';
+                    }
+                });
+                
+                btn.addEventListener('mouseout', () => {
+                    if (year !== currentYear) {
+                        btn.style.background = 'white';
+                    }
+                });
+                
+                grid.appendChild(btn);
+            }
+        }
+    </script>
+
+    <!-- Custom Notification Modal -->
+    <div id="custom-notification-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; padding: 0;">
+            <div id="notification-header" style="
+                padding: 20px 25px;
+                background: #ff5252;
+                color: white;
+                border-radius: 8px 8px 0 0;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            ">
+                <i class="fas fa-exclamation-triangle" style="font-size: 28px;"></i>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 600;">Peringatan Jadwal Bertumpukan</h2>
+            </div>
+            <div id="notification-body" style="
+                padding: 25px;
+                max-height: 500px;
+                overflow-y: auto;
+            "></div>
+            <div style="
+                padding: 20px 25px;
+                border-top: 1px solid #eee;
+                text-align: right;
+            ">
+                <button id="close-notification-btn" class="btn" style="
+                    background: #666;
+                    color: white;
+                    padding: 10px 30px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                ">Tutup</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check BA MAP Data</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #007bff; color: white; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-error { color: red; font-weight: bold; }
+        .invalid-date { background: #ffe6e6; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 BA MAP Data Verification</h1>
+        <button onclick="checkData()">Check Data Now</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function checkData() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const response = await fetch('get_all_data.php');
+                const data = await response.json();
+
+                let html = '<h2>API Response Status</h2>';
+                
+                if (data.shipSchedules && data.shipSchedules.length > 0) {
+                    html += `<p class="status-ok">✓ Found ${data.shipSchedules.length} ship schedules</p>`;
+                    
+                    html += '<h2>Ship Data Details</h2>';
+                    html += '<table>';
+                    html += '<tr><th>No</th><th>Ship Name</th><th>Company</th><th>ETA Time</th><th>End Time</th><th>Status Date</th></tr>';
+                    
+                    data.shipSchedules.forEach((ship, index) => {
+                        const hasValidETA = ship.etaTime && ship.etaTime !== '0000-00-00 00:00:00';
+                        const hasValidEnd = ship.endTime && ship.endTime !== '0000-00-00 00:00:00';
+                        const rowClass = (!hasValidETA || !hasValidEnd) ? 'invalid-date' : '';
+                        
+                        html += `<tr class="${rowClass}">
+                            <td>${index + 1}</td>
+                            <td><strong>${ship.shipName || '-'}</strong></td>
+                            <td>${ship.company || '-'}</td>
+                            <td>${ship.etaTime || '-'} ${!hasValidETA ? '⚠️ INVALID' : '✓'}</td>
+                            <td>${ship.endTime || '-'} ${!hasValidEnd ? '⚠️ INVALID' : '✓'}</td>
+                            <td>${ship.status || '-'}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</table>';
+                    
+                    // Check if dates are valid
+                    const invalidShips = data.shipSchedules.filter(s => 
+                        !s.etaTime || s.etaTime === '0000-00-00 00:00:00' || 
+                        !s.endTime || s.endTime === '0000-00-00 00:00:00'
+                    );
+                    
+                    if (invalidShips.length > 0) {
+                        html += `<h3 style="color: orange;">⚠️ ${invalidShips.length} ship(s) with invalid dates:</h3>`;
+                        html += '<ul>';
+                        invalidShips.forEach(s => {
+                            html += `<li><strong>${s.shipName}</strong> - ETA: ${s.etaTime}, End: ${s.endTime}</li>`;
+                        });
+                        html += '</ul>';
+                        html += '<p style="color: red;"><strong>These ships have invalid dates and won\'t show in BA MAP!</strong></p>';
+                    }
+                } else {
+                    html += '<p class="status-error">✗ No ship schedules found in API</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-check on page load
+        window.addEventListener('load', checkData);
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Grafik</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 30px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Grafik - Jadwal vs Realisasi</h1>
+        
+        <button onclick="checkSchedules()">1. Check Ship Schedules</button>
+        <button onclick="checkRealisasi()">2. Check Realisasi Data</button>
+        <button onclick="checkKeys()">3. Check Ship Keys</button>
+        <button onclick="checkAll()">Check All</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function buildShipKeyFromSchedule(ship) {
+            return `${ship.shipName || ''}||${ship.voyage || ''}||${ship.code || ''}`;
+        }
+
+        function buildShipKeyFromRealisasi(item) {
+            return `${item.namaKapal || ''}||${item.voyage || ''}||${item.kodeWS || ''}`;
+        }
+
+        async function checkSchedules() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h2>Ship Schedules from get_all_data.php</h2><p>Loading...</p>';
+
+            try {
+                const response = await fetch('get_all_data.php');
+                const data = await response.json();
+                
+                let html = '<h2>Ship Schedules</h2>';
+                
+                if (data.shipSchedules && data.shipSchedules.length > 0) {
+                    html += `<p class="success">✓ Found ${data.shipSchedules.length} ship schedules</p>`;
+                    html += '<pre>' + JSON.stringify(data.shipSchedules, null, 2) + '</pre>';
+                } else {
+                    html += '<p class="error">✗ No ship schedules found</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function checkRealisasi() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h2>Realisasi Data from get_realisasi_data.php</h2><p>Loading...</p>';
+
+            try {
+                const response = await fetch('get_realisasi_data.php');
+                const data = await response.json();
+                
+                let html = '<h2>Realisasi Data</h2>';
+                
+                if (data.realisasi && data.realisasi.length > 0) {
+                    html += `<p class="success">✓ Found ${data.realisasi.length} realisasi records</p>`;
+                    html += '<pre>' + JSON.stringify(data.realisasi, null, 2) + '</pre>';
+                } else {
+                    html += '<p class="error">✗ No realisasi data found (tabel masih kosong)</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function checkKeys() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h2>Checking Ship Keys Matching</h2><p>Loading...</p>';
+
+            try {
+                const scheduleResponse = await fetch('get_all_data.php');
+                const scheduleData = await scheduleResponse.json();
+                const schedules = scheduleData.shipSchedules || [];
+
+                const realisasiResponse = await fetch('get_realisasi_data.php');
+                const realisasiData = await realisasiResponse.json();
+                const realisasi = realisasiData.realisasi || [];
+
+                let html = '<h2>Ship Keys Comparison</h2>';
+                
+                html += '<h3>Schedule Keys:</h3><ul>';
+                const scheduleKeys = new Set();
+                schedules.forEach(ship => {
+                    const key = buildShipKeyFromSchedule(ship);
+                    scheduleKeys.add(key);
+                    html += `<li><code>${key}</code> - ETB: ${ship.startTime}, Discharge: ${ship.dischargeValue}, Load: ${ship.loadValue}</li>`;
+                });
+                html += '</ul>';
+
+                html += '<h3>Realisasi Keys:</h3><ul>';
+                const realisasiKeys = new Set();
+                realisasi.forEach(item => {
+                    const key = buildShipKeyFromRealisasi(item);
+                    realisasiKeys.add(key);
+                    html += `<li><code>${key}</code> - ETB: ${item.etbTime}, Discharge: ${item.dischargeValue}, Load: ${item.loadValue}</li>`;
+                });
+                html += '</ul>';
+
+                html += '<h3>Matching Analysis:</h3>';
+                const matches = [];
+                const noMatches = [];
+                
+                realisasiKeys.forEach(rKey => {
+                    if (scheduleKeys.has(rKey)) {
+                        matches.push(rKey);
+                    } else {
+                        noMatches.push(rKey);
+                    }
+                });
+
+                if (matches.length > 0) {
+                    html += `<p class="success">✓ ${matches.length} realisasi records match schedule:</p><ul>`;
+                    matches.forEach(key => {
+                        html += `<li><code>${key}</code></li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p class="error">✗ No matching keys found between schedule and realisasi!</p>';
+                }
+
+                if (noMatches.length > 0) {
+                    html += `<p class="error">⚠️ ${noMatches.length} realisasi records DON'T match any schedule:</p><ul>`;
+                    noMatches.forEach(key => {
+                        html += `<li><code>${key}</code></li>`;
+                    });
+                    html += '</ul>';
+                    html += '<p><strong>Possible reasons:</strong></p>';
+                    html += '<ul>';
+                    html += '<li>Nama kapal, voyage, atau kode WS berbeda antara jadwal dan realisasi</li>';
+                    html += '<li>Data realisasi diinput manual dengan nama/kode yang tidak sesuai jadwal</li>';
+                    html += '</ul>';
+                }
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function checkAll() {
+            await checkSchedules();
+            setTimeout(async () => {
+                const schedResult = document.getElementById('result').innerHTML;
+                await checkRealisasi();
+                setTimeout(async () => {
+                    const realResult = document.getElementById('result').innerHTML;
+                    await checkKeys();
+                    const keyResult = document.getElementById('result').innerHTML;
+                    document.getElementById('result').innerHTML = schedResult + realResult + keyResult;
+                }, 500);
+            }, 500);
+        }
+
+        // Auto check on load
+        window.addEventListener('load', () => {
+            checkKeys();
+        });
+    </script>
+</body>
+</html>
