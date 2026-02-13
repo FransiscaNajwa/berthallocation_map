@@ -1050,29 +1050,39 @@
                             </div>
                         </div>
 
-                        <div class="filter-row-eval">
-                            <label>Pilih Pelayaran:</label>
-                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
-                                <label style="flex: 1; margin: 0;">
-                                    <input type="checkbox" id="filter-kapal-all-pelayaran" onchange="toggleAllPelayaran()" />
-                                    <span style="margin-left: 5px;">Semua Pelayaran</span>
-                                </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div class="filter-row-eval" style="display: flex; flex-direction: column; margin-bottom: 0;">
+                                <label>Pilih Pelayaran:</label>
+                                <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                    <label style="flex: 1; margin: 0;">
+                                        <input type="checkbox" id="filter-kapal-all-pelayaran" onchange="toggleAllPelayaran()" />
+                                        <span style="margin-left: 5px;">Semua Pelayaran</span>
+                                    </label>
+                                </div>
+                                <div id="filter-kapal-pelayaran-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
+                                    <p style="color: #999; margin: 0;">Loading...</p>
+                                </div>
                             </div>
-                            <div id="filter-kapal-pelayaran-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
-                                <p style="color: #999; margin: 0;">Loading...</p>
+
+                            <div class="filter-row-eval" style="display: flex; flex-direction: column; margin-bottom: 0;">
+                                <label>Pilih Kapal:</label>
+                                <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                    <label style="flex: 1; margin: 0;">
+                                        <input type="checkbox" id="filter-kapal-all" onchange="toggleAllKapal()" />
+                                        <span style="margin-left: 5px;">Semua Kapal</span>
+                                    </label>
+                                </div>
+                                <div id="filter-kapal-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
+                                    <p style="color: #999; margin: 0;">Pilih pelayaran terlebih dahulu</p>
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Color Legend -->
                         <div class="filter-row-eval">
-                            <label>Pilih Kapal:</label>
-                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
-                                <label style="flex: 1; margin: 0;">
-                                    <input type="checkbox" id="filter-kapal-all" onchange="toggleAllKapal()" />
-                                    <span style="margin-left: 5px;">Semua Kapal</span>
-                                </label>
-                            </div>
-                            <div id="filter-kapal-list" style="border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto; border-radius: 4px;">
-                                <p style="color: #999; margin: 0;">Pilih pelayaran terlebih dahulu</p>
+                            <label>Keterangan Warna Kapal:</label>
+                            <div id="master-ship-color-legend" style="border: 1px solid #ddd; padding: 10px; max-height: 250px; overflow-y: auto; border-radius: 4px; background-color: #f9f9f9;">
+                                <p style="color: #999; margin: 0;">Memuat data kapal...</p>
                             </div>
                         </div>
                     </div>

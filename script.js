@@ -832,17 +832,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMasterShips() {
         try {
+            console.log('🔄 Loading master ships...');
             const response = await fetch('get_master_ships.php');
             const result = await response.json();
             
-            if (result.status === 'success') {
-                masterShips = result.data || [];
+            if (result.status === 'success' && result.data) {
+                masterShips = result.data;
                 console.log('✅ Loaded', masterShips.length, 'master ships');
                 updateMasterShipsTable();
                 updateShipNameDatalist();
+                renderMasterShipColorLegend();
                 return true;
             } else {
-                console.error('❌ Failed to load master ships:', result.message);
+                console.warn('⚠️ No master ships data returned');
                 masterShips = [];
                 return false;
             }
@@ -892,15 +894,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         datalist.innerHTML = '';
         
-        // Tampilkan semua kapal dari master ships
-        // Nama kapal yang sama boleh muncul, yang penting kombinasi (nama + voyage + WS) berbeda
-        masterShips.forEach(ship => {
-            const option = document.createElement('option');
-            option.value = ship.ship_name;
-            datalist.appendChild(option);
-        });
-        
-        console.log('🚢 Ship names loaded in dropdown:', datalist.children.length);
+        if (masterShips && masterShips.length > 0) {
+            masterShips.forEach(ship => {
+                if (ship.ship_name) {
+                    const option = document.createElement('option');
+                    option.value = ship.ship_name;
+                    datalist.appendChild(option);
+                }
+            });
+            console.log('✅ Ship datalist updated:', masterShips.length, 'options');
+        }
     }
 
     async function saveMasterShip(formData) {
@@ -1073,12 +1076,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     async function initialize() {
-        // Load data from database first, then update UI
-        await loadDataFromDatabase();
-        await loadMasterShips();
-        updateDisplay(); 
-        setupEventListeners();
-        await loadCommLog();
+        try {
+            console.log('🚀 Initializing app...');
+            await loadDataFromDatabase();
+            await loadMasterShips();
+            updateDisplay(); 
+            setupEventListeners();
+            await loadCommLog();
+            console.log('✅ App ready');
+        } catch (err) {
+            console.error('❌ Init error:', err);
+        }
     }
 
     function drawGrid() {
@@ -2313,7 +2321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDisplay(); 
         });
 
-        addShipBtn.addEventListener('click', () => {
+        addShipBtn.addEventListener('click', async () => {
             editingShipIndex = null;
             shipForm.reset();
             loadPendingForm();
@@ -2321,6 +2329,12 @@ document.addEventListener('DOMContentLoaded', () => {
             formSubmitBtn.textContent = 'Submit';
             shipForm.classList.remove('edit-mode');
             deleteShipBtn.onclick = null;
+            
+            // Make sure master ships are loaded first
+            if (!masterShips || masterShips.length === 0) {
+                console.log('⏳ Loading master ships...');
+                await loadMasterShips();
+            }
             
             // Update dropdown kapal dengan filter kapal yang sedang aktif
             updateShipNameDatalist();
@@ -3055,6 +3069,8 @@ function navigateToPage(page) {
     } else if (page === 'grafik') {
         document.getElementById('grafik-page').style.display = 'block';
         chartUserChanged = false;
+        // Load master ships for color legend
+        loadMasterShipsForGrafik();
         setTimeout(() => {
             initEvalChart();
         }, 100);
@@ -4675,77 +4691,323 @@ async function updateKapalChart() {
             return etb >= range.start && etb <= range.end;
         });
         
+        console.log('📅 Date range:', range.start, 'to', range.end);
+        console.log('🚢 Schedule filtered:', scheduleFiltered.length, 'ships');
+        
         // Filter realisasi data by pelayaran/kapal and date range
         let realisasiFiltered = realisasiData.filter(item => {
-            if (!selectedPelayaran.includes(item.pelayaran)) return false;
+            // Map field names: pelayaran -> company, namaKapal -> shipName
+            const itemCompany = item.pelayaran || item.company || '';
+            const itemShipName = item.namaKapal || item.shipName || item.kapal || '';
+            
+            if (!selectedPelayaran.includes(itemCompany)) return false;
             // If kapal selected (not "semua kapal"), filter by kapal
-            if (!allKapalCheckbox.checked && selectedKapal.length > 0 && !selectedKapal.includes((item.shipName || item.kapal))) return false;
+            if (!allKapalCheckbox.checked && selectedKapal.length > 0 && !selectedKapal.includes(itemShipName)) return false;
             const raw = item.etbTime || item.etaTime || '';
             const dateObj = new Date(raw);
             if (Number.isNaN(dateObj.getTime())) return false;
             return dateObj >= range.start && dateObj <= range.end;
         });
         
-        // Aggregate by period
-        const granularity = periodo === 'tahun' ? 'month' : 'day';
-        const scheduleMap = new Map();
+        console.log('✅ Realisasi filtered:', realisasiFiltered.length, 'items');
+        
+        // Collect ALL schedule and realisasi ships with their dates
+        const allScheduleShips = [];
+        const allRealisasiShips = [];
+        
+        // Process all schedule data - one point per ship at ETB date
         scheduleFiltered.forEach(ship => {
-            const etb = new Date(ship.startTime);
-            const key = granularity === 'month' ? getLocalMonthKey(etb) : getLocalDateKey(etb);
-            const current = scheduleMap.get(key) || { discharge: 0, loading: 0 };
-            current.discharge += Number(ship.dischargeValue || 0);
-            current.loading += Number(ship.loadValue || 0);
-            scheduleMap.set(key, current);
+            const shipName = ship.shipName || ship.name || 'Unknown';
+            const etbDate = new Date(ship.startTime);
+            const etbDateKey = getLocalDateKey(etbDate);
+            
+            allScheduleShips.push({
+                shipName: shipName,
+                etbDate: etbDate,
+                etbDateKey: etbDateKey,
+                dischargeValue: Number(ship.dischargeValue || 0),
+                loadingValue: Number(ship.loadValue || 0)
+            });
         });
         
-        const realisasiMap = new Map();
+        // Process all realisasi data - one point per ship at ETB date
         realisasiFiltered.forEach(item => {
-            const etb = item.etbTime || item.etaTime || '';
-            const dateObj = new Date(etb);
-            const key = granularity === 'month' ? getLocalMonthKey(dateObj) : getLocalDateKey(dateObj);
-            const current = realisasiMap.get(key) || { discharge: 0, loading: 0 };
-            current.discharge += Number(item.dischargeValue || item.discharge || 0);
-            current.loading += Number(item.loadValue || item.loading || 0);
-            realisasiMap.set(key, current);
+            const shipName = item.namaKapal || item.shipName || item.name || 'Unknown';
+            const etbDate = new Date(item.etbTime || item.etaTime || '');
+            
+            if (!Number.isNaN(etbDate.getTime())) {
+                const etbDateKey = getLocalDateKey(etbDate);
+                allRealisasiShips.push({
+                    shipName: shipName,
+                    etbDate: etbDate,
+                    etbDateKey: etbDateKey,
+                    dischargeValue: Number(item.dischargeValue || item.discharge || 0),
+                    loadingValue: Number(item.loadValue || item.loading || 0)
+                });
+            }
         });
         
-        // Build labels and data with correct date range
-        const { labels, keys } = buildLabelKeys(range, granularity);
-        const targetDischarge = keys.map(key => scheduleMap.get(key)?.discharge ?? null);
-        const targetLoad = keys.map(key => scheduleMap.get(key)?.loading ?? null);
-        const realDischarge = keys.map(key => realisasiMap.get(key)?.discharge ?? null);
-        const realLoad = keys.map(key => realisasiMap.get(key)?.loading ?? null);
+        // Sort by ETB date
+        allScheduleShips.sort((a, b) => a.etbDate - b.etbDate);
+        allRealisasiShips.sort((a, b) => a.etbDate - b.etbDate);
         
-        // Helper to expand single point
-        const expandSinglePoint = (data) => {
-            const indexes = data.map((v, i) => (v !== null && v !== undefined ? i : null)).filter(i => i !== null);
-            if (indexes.length !== 1 || data.length < 2) return data;
-            const idx = indexes[0];
-            const expanded = [...data];
-            if (idx > 0) expanded[idx - 1] = expanded[idx];
-            else if (idx < expanded.length - 1) expanded[idx + 1] = expanded[idx];
-            return expanded;
-        };
+        // Collect all unique dates
+        const allDatesSet = new Set();
+        allScheduleShips.forEach(ship => allDatesSet.add(ship.etbDateKey));
+        allRealisasiShips.forEach(ship => allDatesSet.add(ship.etbDateKey));
+        const sortedDates = Array.from(allDatesSet).sort();
         
-        const targetDischargeSeries = expandSinglePoint(targetDischarge);
-        const targetLoadSeries = expandSinglePoint(targetLoad);
-        const realDischargeSeries = expandSinglePoint(realDischarge);
-        const realLoadSeries = expandSinglePoint(realLoad);
+        console.log('📋 Schedule ships:', allScheduleShips.length, allScheduleShips.map(s => s.shipName));
+        console.log('✅ Realisasi ships:', allRealisasiShips.length, allRealisasiShips.map(s => s.shipName));
+        console.log('📅 Unique dates:', sortedDates);
         
-        // Create chart options
+        // Collect all unique ship names for color reference
+        const allShipsSet = new Set();
+        allScheduleShips.forEach(s => allShipsSet.add(s.shipName));
+        allRealisasiShips.forEach(s => allShipsSet.add(s.shipName));
+        
+        const colorReference = (masterShips && masterShips.length > 0) 
+            ? masterShips.map(s => s.ship_name).sort()
+            : Array.from(allShipsSet).sort();
+        
+        console.log('🎨 Color reference:', colorReference);
+        console.log('🚀 About to combine data...');
+        
+        // Combine schedule and realisasi ships into single array with type attribute
+        const shipDataArray = [];
+        
+        allScheduleShips.forEach(ship => {
+            shipDataArray.push({
+                ...ship,
+                type: 'schedule'
+            });
+        });
+        
+        allRealisasiShips.forEach(ship => {
+            shipDataArray.push({
+                ...ship,
+                type: 'realisasi'
+            });
+        });
+        
+        console.log('📊 Combined ship data array:', shipDataArray.length, 'total ships');
+        console.log('📊 ShipDataArray contents:', shipDataArray);
+        console.log('📊 SortedDates:', sortedDates);
+        
+        // Create datasets
+        const bongkarDatasets = [];
+        const muatDatasets = [];
+        
+        // Create dataset for each ship - CLEARLY identify as Target or Realisasi
+        shipDataArray.forEach((ship) => {
+            const color = getShipColor(ship.shipName, colorReference) || '#999999';
+            const dataSourceType = ship.type === 'schedule' ? 'Jadwal' : 'Aktual';
+            
+            // Create data array with value only at ETB date
+            const bongkarData = sortedDates.map(dateKey => 
+                dateKey === ship.etbDateKey ? ship.dischargeValue : null
+            );
+            
+            const muatData = sortedDates.map(dateKey =>
+                dateKey === ship.etbDateKey ? ship.loadingValue : null
+            );
+            
+            bongkarDatasets.push({
+                label: `${ship.shipName}`,
+                data: bongkarData,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 6,
+                pointBackgroundColor: color,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                pointHoverRadius: 8,
+                tension: 0,
+                shipName: ship.shipName,
+                type: dataSourceType
+            });
+            
+            muatDatasets.push({
+                label: `${ship.shipName}`,
+                data: muatData,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 6,
+                pointBackgroundColor: color,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                pointHoverRadius: 8,
+                tension: 0,
+                shipName: ship.shipName,
+                type: dataSourceType
+            });
+        });
+        
+        // Build labels from sorted dates - format: "DD MMM"
+        const labels = sortedDates.map(dateKey => {
+            const dateObj = new Date(dateKey);
+            return dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        });
+        
+        console.log('📊 Bongkar datasets created:', bongkarDatasets.length, 'datasets');
+        console.log('📊 Muat datasets created:', muatDatasets.length, 'datasets');
+        console.log('📊 Labels:', labels);
+        
+        // Add connecting lines - SEPARATE sets for Target and Realisasi
+        // This way we can see which one has data
+        
+        // TARGET (Schedule) line - only connect schedule ships
+        const targetLineBongkar = sortedDates.map((dateKey) => {
+            const shipAtDate = shipDataArray.find(s => s.etbDateKey === dateKey && s.type === 'schedule');
+            return shipAtDate ? shipAtDate.dischargeValue : null;
+        });
+        
+        // REALISASI line - only connect realisasi ships  
+        const realisasiLineBongkar = sortedDates.map((dateKey) => {
+            const shipAtDate = shipDataArray.find(s => s.etbDateKey === dateKey && s.type === 'realisasi');
+            return shipAtDate ? shipAtDate.dischargeValue : null;
+        });
+        
+        console.log('📊 Target Bongkar line points:', targetLineBongkar.filter(v => v !== null).length);
+        console.log('📊 Realisasi Bongkar line points:', realisasiLineBongkar.filter(v => v !== null).length);
+        
+        // Add target line (dashed) - ONLY if has at least one data point
+        if (targetLineBongkar.some(v => v !== null && v > 0)) {
+            bongkarDatasets.push({
+                label: '---- Target Bongkar (Jadwal)',
+                data: targetLineBongkar,
+                borderColor: '#c44e52',
+                borderWidth: 2.5,
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0.3,
+                spanGaps: false
+            });
+        }
+        
+        // Add realisasi line (solid) - ONLY if has at least one data point
+        if (realisasiLineBongkar.some(v => v !== null && v > 0)) {
+            bongkarDatasets.push({
+                label: '━━━ Realisasi Bongkar (Aktual)',
+                data: realisasiLineBongkar,
+                borderColor: '#2ca02c',
+                borderWidth: 2.5,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0.3,
+                spanGaps: false
+            });
+        }
+        
+        // Same for muat
+        const targetLineMuat = sortedDates.map((dateKey) => {
+            const shipAtDate = shipDataArray.find(s => s.etbDateKey === dateKey && s.type === 'schedule');
+            return shipAtDate ? shipAtDate.loadingValue : null;
+        });
+        
+        const realisasiLineMuat = sortedDates.map((dateKey) => {
+            const shipAtDate = shipDataArray.find(s => s.etbDateKey === dateKey && s.type === 'realisasi');
+            return shipAtDate ? shipAtDate.loadingValue : null;
+        });
+        
+        console.log('📊 Target Muat line points:', targetLineMuat.filter(v => v !== null).length);
+        console.log('📊 Realisasi Muat line points:', realisasiLineMuat.filter(v => v !== null).length);
+        
+        if (targetLineMuat.some(v => v !== null && v > 0)) {
+            muatDatasets.push({
+                label: '---- Target Muat (Jadwal)',
+                data: targetLineMuat,
+                borderColor: '#c44e52',
+                borderWidth: 2.5,
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0.3,
+                spanGaps: false
+            });
+        }
+        
+        if (realisasiLineMuat.some(v => v !== null && v > 0)) {
+            muatDatasets.push({
+                label: '━━━ Realisasi Muat (Aktual)',
+                data: realisasiLineMuat,
+                borderColor: '#2ca02c',
+                borderWidth: 2.5,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0.3,
+                spanGaps: false
+            });
+        }
+        
+        // Create chart options with date labels on X-axis
         const createChartOptions = (chartType) => {
             const periodLabel = periodo === 'minggu' ? ' - Mingguan' : periodo === 'bulan' ? ' - Bulanan' : ' - Tahunan';
-            const yAxisTitle = chartType === 'bongkar' ? 'Jumlah Bongkar (TEUs' + periodLabel + ')' : 'Jumlah Muat (TEUs' + periodLabel + ')';
+            const yAxisTitle = chartType === 'bongkar' ? 'Jumlah Bongkar (TEUs)' : 'Jumlah Muat (TEUs)';
             return {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12, titleFont: { size: 12, weight: 'bold' }, bodyFont: { size: 12 } }
+                    tooltip: { 
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                        padding: 12, 
+                        titleFont: { size: 11, weight: 'bold' }, 
+                        bodyFont: { size: 12 },
+                        borderColor: '#ccc',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                if (context && context.length > 0) {
+                                    return context[0].label || '';
+                                }
+                                return '';
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                
+                                // Skip tooltip for connecting lines
+                                if (context.dataset.label && (context.dataset.label.includes('Target') || context.dataset.label.includes('Realisasi'))) {
+                                    return context.dataset.label.replace('----', '').replace('━━━', '').trim();
+                                }
+                                
+                                // For ship points, show ship name and value
+                                if (context.dataset.shipName) {
+                                    const shipLabel = context.dataset.shipName;
+                                    const typeLabel = context.dataset.type === 'schedule' ? '(Jadwal)' : '(Aktual)';
+                                    if (value !== null && value > 0) {
+                                        return `${shipLabel} ${typeLabel}: ${value} TEUs`;
+                                    }
+                                }
+                                
+                                return '';
+                            },
+                            afterLabel: function(context) {
+                                return '';
+                            }
+                        }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: yAxisTitle }, grid: { display: false, drawBorder: false } },
-                    x: { title: { display: true, text: granularity === 'month' ? 'Bulan' : 'Tanggal' }, grid: { display: false, drawBorder: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        title: { display: true, text: yAxisTitle }, 
+                        grid: { display: false, drawBorder: false } 
+                    },
+                    x: { 
+                        title: { display: true, text: 'Tanggal Sandar' }, 
+                        grid: { display: false, drawBorder: false }
+                    }
                 }
             };
         };
@@ -4754,35 +5016,158 @@ async function updateKapalChart() {
         const bongkarCtx = document.getElementById('bongkarChart');
         if (currentEvalChartBongkar) currentEvalChartBongkar.destroy();
         
-        currentEvalChartBongkar = new Chart(bongkarCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Target Bongkar', data: targetDischargeSeries, borderColor: '#e53935', borderWidth: 2, borderDash: [4, 4], fill: false, pointRadius: 3, pointBackgroundColor: '#e53935' },
-                    { label: 'Realisasi Bongkar', data: realDischargeSeries, borderColor: '#e53935', borderWidth: 2.5, fill: false, pointRadius: 3, pointBackgroundColor: '#e53935' }
-                ]
-            },
-            options: createChartOptions('bongkar')
-        });
+        try {
+            currentEvalChartBongkar = new Chart(bongkarCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: bongkarDatasets
+                },
+                options: createChartOptions('bongkar')
+            });
+            console.log('✅ Bongkar chart created successfully');
+        } catch (chartError) {
+            console.error('❌ Error creating bongkar chart:', chartError);
+        }
         
         // Render Muat chart
         const muatCtx = document.getElementById('muatChart');
         if (currentEvalChartMuat) currentEvalChartMuat.destroy();
         
-        currentEvalChartMuat = new Chart(muatCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Target Muat', data: targetLoadSeries, borderColor: '#2196F3', borderWidth: 2, borderDash: [4, 4], fill: false, pointRadius: 3, pointBackgroundColor: '#2196F3' },
-                    { label: 'Realisasi Muat', data: realLoadSeries, borderColor: '#2196F3', borderWidth: 2.5, fill: false, pointRadius: 3, pointBackgroundColor: '#2196F3' }
-                ]
-            },
-            options: createChartOptions('muat')
-        });
+        try {
+            currentEvalChartMuat = new Chart(muatCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: muatDatasets
+                },
+                options: createChartOptions('muat')
+            });
+            console.log('✅ Muat chart created successfully');
+        } catch (chartError) {
+            console.error('❌ Error creating muat chart:', chartError);
+        }
+        
+        // Update legend with the SAME color reference used in graphs
+        // This ensures synchronization between legend and graph colors
+        updateLegendWithColorReference(colorReference);
+        
     } catch (error) {
         console.error('Error updating kapal chart:', error);
+    }
+}
+
+// Helper function to generate unique color per ship using high-contrast palette
+function getShipColor(shipName, allShipNames = []) {
+    if (!shipName) return '#888888';
+    
+    // 25 warna kontras untuk kapal - custom color palette
+    const colorPalette = [
+        '#FF0000', // 1. Merah (Red)
+        '#00FF00', // 2. Hijau Lime (Lime)
+        '#0000FF', // 3. Biru (Blue)
+        '#FFFF00', // 4. Kuning (Yellow)
+        '#FF00FF', // 5. Magenta (Magenta/Fuchsia)
+        '#00FFFF', // 6. Cyan (Cyan/Aqua)
+        '#FF8000', // 7. Oranye (Orange)
+        '#8000FF', // 8. Ungu Tua (Deep Purple)
+        '#FF0080', // 9. Pink Cerah (Bright Pink)
+        '#008080', // 10. Hijau Teal (Teal)
+        '#804000', // 11. Cokelat (Brown)
+        '#000080', // 12. Biru Navy (Navy Blue)
+        '#808080', // 13. Abu-abu (Gray)
+        '#DC143C', // 14. Merah Crimson (Crimson) - ganti dari putih
+        '#000000', // 15. Hitam (Black)
+        '#FFD700', // 16. Emas (Gold)
+        '#228B22', // 17. Hijau Daun (Forest Green)
+        '#87CEEB', // 18. Biru Langit (Sky Blue)
+        '#800000', // 19. Merah Marun (Maroon)
+        '#E6E6FA', // 20. Ungu Lavender (Lavender)
+        '#FA8072', // 21. Salmon (Salmon)
+        '#4B0082', // 22. Indigo (Indigo)
+        '#C0C0C0', // 23. Silver (Silver)
+        '#808000', // 24. Hijau Zaitun (Olive)
+        '#FF7F50', // 25. Oranye Coral (Coral)
+    ];
+    
+    // If we have the full list, use consistent index-based assignment
+    if (allShipNames.length > 0) {
+        const sortedNames = [...allShipNames].sort();
+        const index = sortedNames.indexOf(shipName);
+        if (index >= 0) {
+            return colorPalette[index % colorPalette.length];
+        }
+    }
+    
+    // Fallback: hash-based selection
+    let hash = 0;
+    for (let i = 0; i < shipName.length; i++) {
+        hash = shipName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colorPalette[Math.abs(hash) % colorPalette.length];
+}
+
+// Render color legend for ships in current graph
+function renderMasterShipColorLegend(shipNames = []) {
+    const container = document.getElementById('master-ship-color-legend');
+    if (!container) return;
+    
+    // Use master ships if available, otherwise use shipNames from graph
+    let displayShips = [];
+    
+    if (masterShips && masterShips.length > 0) {
+        // Show all master ships
+        displayShips = masterShips.map(ship => ship.ship_name).sort();
+    } else if (shipNames && shipNames.length > 0) {
+        // Fallback: show ships from current graph data
+        displayShips = [...shipNames].sort();
+    } else {
+        container.innerHTML = '<div style="padding: 10px; color: #999;">Memuat data kapal...</div>';
+        return;
+    }
+    
+    updateLegendWithColorReference(displayShips);
+}
+
+// Helper function to update legend with specific color reference
+function updateLegendWithColorReference(colorReference) {
+    const container = document.getElementById('master-ship-color-legend');
+    if (!container) return;
+    
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+    colorReference.forEach(shipName => {
+        const color = getShipColor(shipName, colorReference);
+        html += `
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 20px; height: 20px; background-color: ${color}; border-radius: 3px; border: 1px solid #ddd;"></div>
+                <span style="font-size: 12px;">${shipName}</span>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Load master ships specifically for grafik page
+async function loadMasterShipsForGrafik() {
+    try {
+        const response = await fetch('get_master_ships.php');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            masterShips = result.data || [];
+            console.log('✅ Loaded', masterShips.length, 'master ships for color legend');
+            renderMasterShipColorLegend();
+            return true;
+        } else {
+            console.error('❌ Failed to load master ships:', result.message);
+            masterShips = [];
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error loading master ships:', error);
+        masterShips = [];
+        return false;
     }
 }
 

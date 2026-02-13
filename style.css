@@ -1665,45 +1665,39 @@ h2#report-subtitle {
 .legend-line {
     width: 30px;
     height: 3px;
-    background: #4CAF50;
+    background: #333;
     flex-shrink: 0;
 }
 
 .legend-line.solid {
-    background: #4CAF50;
+    background: #333;
 }
 
 .legend-line.dashed {
-    background-image: repeating-linear-gradient(
-        90deg,
-        currentColor 0,
-        currentColor 5px,
-        transparent 5px,
-        transparent 8px
-    );
     background-color: transparent;
-    border-top: 2px dashed currentColor;
+    border: none;
+    border-top: 2px dashed #333;
+    height: 0;
 }
 
 .legend-line.green {
-    color: #4CAF50;
+    /* Color removed - using neutral color */
 }
 
 .legend-line.red {
-    color: #e53935;
+    /* Color removed - using neutral color */
 }
 
 .legend-line.blue {
-    color: #2196F3;
-    background: #2196F3;
+    /* Color removed - using neutral color */
 }
 
 .legend-line.blue.dashed {
-    border-top-color: #2196F3;
+    /* Color removed - using neutral color */
 }
 
 .legend-line.red.dashed {
-    border-top-color: #e53935;
+    /* Color removed - using neutral color */
 }
 
 /* Autocomplete Dropdown Styles */
